@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050508">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="enyao">
+<title>enyao | Carteira de investimentos</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#050508;
+  --surface:#0e0e14;
+  --surface-2:#16161e;
+  --border:rgba(255,255,255,.06);
+  --border-strong:rgba(255,255,255,.1);
+  --pink:#ec4899;
+  --cyan:#22d3ee;
+  --purple:#a855f7;
+  --text:#ffffff;
+  --muted:#8a8a9c;
+  --muted-2:#5a5a6a;
+  --gradient:linear-gradient(135deg,#ec4899 0%,#a855f7 45%,#22d3ee 100%);
+  --success:#22d3ee;
+  --danger:#ff4d80;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font:15px -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
+  min-height:100vh;
+  padding-bottom:100px;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+header{padding:24px 18px 0;max-width:600px;margin:0 auto}
+.brand{
+  font-size:26px;font-weight:800;letter-spacing:-.8px;
+  background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;
+  display:inline-block;
+}
+.hero{
+  margin-top:16px;
+  background:var(--gradient);
+  border-radius:22px;padding:22px;position:relative;overflow:hidden;
+  box-shadow:0 24px 48px -24px rgba(236,72,153,.5),0 16px 40px -20px rgba(34,211,238,.35);
+}
+.hero::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 90% 0%,rgba(255,255,255,.25),transparent 55%);
+}
+.hero-label{
+  font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:700;
+  color:rgba(255,255,255,.72);position:relative;z-index:1;
+}
+.hero-total{
+  font-size:34px;font-weight:800;letter-spacing:-1.2px;margin:6px 0 18px;
+  position:relative;z-index:1;
+}
+.hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:1}
+.hero-stat{
+  background:rgba(0,0,0,.28);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:11px 13px;
+}
+.hero-stat-label{
+  font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;
+  color:rgba(255,255,255,.7);
+}
+.hero-stat-value{font-size:17px;font-weight:700;margin-top:4px;letter-spacing:-.3px}
+main{padding:22px 18px 0;max-width:600px;margin:0 auto}
+.section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;padding:18px;margin-bottom:14px;
+}
+.section h2{font-size:16px;font-weight:700;margin:0 0 14px;letter-spacing:-.3px}
+button{border:0;border-radius:14px;font:inherit;cursor:pointer;transition:transform .08s,filter .2s}
+button:active{transform:scale(.98)}
+.primary{
+  background:var(--gradient);color:#fff;font-weight:700;font-size:15px;
+  padding:15px 16px;width:100%;
+  box-shadow:0 12px 28px -12px rgba(236,72,153,.55);
+}
+.ghost{
+  background:var(--surface-2);color:var(--text);font-weight:600;
+  border:1px solid var(--border-strong);padding:11px 14px;font-size:13px;
+}
+.danger{background:rgba(255,77,128,.08);color:var(--danger);border:1px solid rgba(255,77,128,.22);font-weight:600;padding:13px}
+input,select{
+  width:100%;padding:13px 14px;
+  background:var(--surface-2);color:var(--text);
+  border:1px solid var(--border-strong);border-radius:12px;font:inherit;
+  transition:border-color .15s,background .15s;
+}
+input:focus,select:focus{outline:0;border-color:var(--pink);background:var(--surface)}
+label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hidden{display:none !important}
+.empty{padding:22px 6px;text-align:center;color:var(--muted);font-size:13px}
+.asset{
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:14px;padding:14px;margin-bottom:10px;
+}
+.asset:last-child{margin-bottom:0}
+.assetTop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.ticker{font-weight:800;font-size:16px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.pill{
+  font-size:9px;font-weight:700;letter-spacing:.6px;
+  background:var(--gradient);color:#fff;padding:3px 8px;border-radius:99px;
+  text-transform:uppercase;
+}
+.small{font-size:11.5px;color:var(--muted);margin-top:3px}
+.right{text-align:right}
+.right strong{font-size:16px;letter-spacing:-.3px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.sub-label{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.sub-value{font-size:15px;font-weight:700;margin-top:3px}
+.notice{font-size:11.5px;line-height:1.55;color:var(--muted);margin:10px 0 0}
+.suggestion{
+  width:100%;display:flex;justify-content:space-between;gap:10px;text-align:left;
+  background:transparent;color:var(--text);border-bottom:1px solid var(--border);
+  border-radius:0;padding:12px 14px;
+}
+.suggestion:last-child{border-bottom:0}
+.suggestion:hover,.suggestion:active{background:var(--surface-2)}
+.searchResults{
+  background:var(--surface);border:1px solid var(--border-strong);
+  border-radius:12px;margin-top:8px;max-height:220px;overflow:auto;
+}
+.result-box{
+  background:linear-gradient(135deg,rgba(236,72,153,.12),rgba(34,211,238,.12));
+  border:1px solid rgba(236,72,153,.25);border-radius:14px;padding:14px;margin-top:12px;
+}
+.result-box strong{font-size:16px;letter-spacing:-.3px}
+.tabs{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(5,5,8,.82);
+  backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+  border-top:1px solid var(--border);
+  display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+.tabs-inner{display:flex;width:100%;max-width:600px;margin:0 auto}
+.tabs button{
+  flex:1;background:none;color:var(--muted);
+  font-size:10px;font-weight:600;padding:8px 4px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  border-radius:12px;letter-spacing:.2px;
+}
+.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:filter .2s}
+.tabs button.active{color:var(--text)}
+.tabs button.active svg{stroke:var(--pink);filter:drop-shadow(0 0 10px rgba(236,72,153,.7))}
+.tabs button.active{color:var(--pink)}
+.tabs button span{color:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">enyao</div>
+  <div class="hero">
+    <div class="hero-label">Patrimônio total</div>
+    <div class="hero-total" id="total">R$ 0,00</div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-label">Posições</div>
+        <div class="hero-stat-value" id="count">0</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Resultado</div>
+        <div class="hero-stat-value" id="profit">R$ 0,00</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="section" id="portfolio"><h2>Minha carteira</h2><div id="assets"></div></section>
+
+<section class="section hidden" id="trade"><h2>Registrar operação</h2>
+<label for="assetSearch">Ativo</label>
+<input id="assetSearch" placeholder="Ticker ou nome… Ex.: MXRF11" autocomplete="off">
+<div id="suggestions" class="searchResults hidden"></div>
+<div id="selectedBox" class="result-box hidden">
+  <strong id="selectedTicker"></strong>
+  <div class="small" id="selectedName"></div>
+  <div class="small" id="selectedType"></div>
+</div>
+<form id="tradeForm">
+  <input type="hidden" id="chosenTicker">
+  <label for="operation">Operação</label>
+  <select id="operation"><option value="buy">Compra</option><option value="sell">Venda</option></select>
+  <div class="grid">
+    <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="number" min="0.0001" step="any" required placeholder="10"></div>
+    <div><label for="tradePrice">Preço unit. (R$)</label><input id="tradePrice" type="number" min="0.0001" step="any" required placeholder="6,99"></div>
+  </div>
+  <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
+  <label for="fees">Custos (R$)</label><input id="fees" type="number" min="0" step="0.01" value="0">
+  <button type="submit" class="primary" style="margin-top:18px">Salvar operação</button>
+</form>
+<p class="notice">O preço médio considera suas compras e custos. Em vendas, a quantidade é reduzida e o resultado realizado é estimado pelo preço médio anterior.</p>
+</section>
+
+<section class="section hidden" id="catalog"><h2>Catálogo</h2>
+<label for="catalogSearch">Pesquisar</label>
+<input id="catalogSearch" placeholder="Ticker, nome ou categoria">
+<div id="catalogList"></div>
+<p class="notice">Catálogo para facilitar o cadastro. Não é lista completa nem fonte de cotações.</p>
+<button id="customBtn" class="ghost" style="width:100%;margin-top:12px">+ Cadastrar ativo personalizado</button>
+<div id="customForm" class="hidden" style="margin-top:12px">
+  <label for="customTicker">Ticker</label><input id="customTicker" placeholder="ABCD11">
+  <label for="customName">Nome</label><input id="customName" placeholder="Nome do ativo">
+  <label for="customType">Categoria</label>
+  <select id="customType"><option>FII</option><option>Ação</option><option>ETF</option><option>Renda fixa</option><option>Outro</option></select>
+  <button id="saveCustom" class="primary" style="margin-top:14px">Salvar no catálogo</button>
+</div>
+</section>
+
+<section class="section hidden" id="backup"><h2>Backup e dados</h2>
+<p class="notice">Seus dados ficam neste aparelho. Faça backup regularmente.</p>
+<button id="exportBtn" class="primary" style="margin-top:14px">Exportar backup (JSON)</button>
+<label for="importFile" style="margin-top:16px">Importar backup</label>
+<input type="file" id="importFile" accept=".json,application/json">
+<button id="clearBtn" class="danger" style="width:100%;margin-top:18px">Apagar todos os dados</button>
+</section>
+
+<section class="section"><h2>Histórico recente</h2><div id="history"></div>
+<p class="notice">Protótipo pessoal. Sem integração com B3/corretora e sem sincronização em nuvem.</p>
+</section>
+</main>
+
+<nav class="tabs"><div class="tabs-inner">
+  <button class="active" data-tab="portfolio">
+    <svg viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7"/></svg>
+    <span>Carteira</span>
+  </button>
+  <button data-tab="trade">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+    <span>Operação</span>
+  </button>
+  <button data-tab="catalog">
+    <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    <span>Catálogo</span>
+  </button>
+  <button data-tab="backup">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Ajustes</span>
+  </button>
+</div></nav>
+
+<script>
+const KEY='enyao-v02';
+const baseCatalog=[
+['MXRF11','Maxi Renda','FII'],['HGLG11','CSHG Logística','FII'],['VISC11','Vinci Shopping Centers','FII'],['XPML11','XP Malls','FII'],['KNRI11','Kinea Renda Imobiliária','FII'],['GARE11','Guardian Real Estate','FII'],['TRXF11','TRX Real Estate','FII'],['RECR11','FII REC Recebíveis Imobiliários','FII'],['LIFE11','Life Capital Partners','FII'],['XPCA11','XP Crédito Agrícola','FII'],['FGAA11','FG Agro','FII'],['AAZQ11','AZ Quest Sole','FII'],['IRIM11','Iridium Recebíveis Imobiliários','FII'],
+['ITSA4','Itaúsa PN','Ação'],['ITUB4','Itaú Unibanco PN','Ação'],['PETR4','Petrobras PN','Ação'],['VALE3','Vale ON','Ação'],['BBAS3','Banco do Brasil ON','Ação'],['WEGE3','WEG ON','Ação'],['BBDC4','Bradesco PN','Ação'],['ABEV3','Ambev ON','Ação'],['B3SA3','B3 ON','Ação'],['EGIE3','Engie Brasil ON','Ação'],['TAEE11','Taesa units','Ação'],['OPCT3','OceanPact ON','Ação'],
+['IVVB11','iShares S&P 500','ETF'],['BOVA11','iShares Ibovespa','ETF'],['SMAL11','iShares Small Cap','ETF'],['DIVO11','It Now IDIV','ETF'],['LFTS11','Investo Tesouro Selic','ETF'],['NDIV11','Nu ETF Dividendos','ETF'],
+['CDB','CDB bancário','Renda fixa'],['TESOURO SELIC','Tesouro Selic','Renda fixa'],['LCI','Letra de Crédito Imobiliário','Renda fixa'],['LCA','Letra de Crédito do Agronegócio','Renda fixa']
+].map(([ticker,name,type])=>({ticker,name,type,custom:false}));
+let state={catalog:[],trades:[],dividends:[],prices:{}};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)state={...state,...s}}catch(e){}
+const catalog=()=>[...baseCatalog,...state.catalog];
+const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const num=n=>Number(n||0);
+const today=()=>new Date().toLocaleDateString('en-CA');
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function positions(){let m={};for(const t of state.trades){let p=m[t.ticker]||(m[t.ticker]={ticker:t.ticker,qty:0,cost:0,realized:0});if(t.side==='buy'){p.cost+=t.qty*t.price+t.fees;p.qty+=t.qty}else{let avg=p.qty?p.cost/p.qty:0;let sold=Math.min(t.qty,p.qty);p.realized+=(t.price*sold-t.fees)-(avg*sold);p.cost-=avg*sold;p.qty-=sold;if(p.qty<1e-8){p.qty=0;p.cost=0}}}return Object.values(m).filter(p=>p.qty>1e-8).map(p=>{const c=catalog().find(x=>x.ticker===p.ticker);p.avg=p.qty?p.cost/p.qty:0;p.current=num(state.prices[p.ticker]??p.avg);p.market=p.qty*p.current;p.unrealized=p.market-p.cost;p.name=c?.name||p.ticker;p.type=c?.type||'Outro';return p})}
+function render(){
+  const ps=positions(),total=ps.reduce((s,p)=>s+p.market,0),profit=ps.reduce((s,p)=>s+p.unrealized,0);
+  document.getElementById('total').textContent=brl(total);
+  document.getElementById('count').textContent=ps.length;
+  const pel=document.getElementById('profit');
+  pel.textContent=(profit>0?'+':'')+brl(profit);
+  pel.style.color=profit<0?'#ffd0dd':'#d5f7ff';
+  document.getElementById('assets').innerHTML=ps.length?ps.map(p=>`
+    <div class="asset">
+      <div class="assetTop">
+        <div>
+          <div class="ticker">${esc(p.ticker)} <span class="pill">${esc(p.type)}</span></div>
+          <div class="small">${esc(p.name)} · ${p.qty.toLocaleString('pt-BR')} un.</div>
+        </div>
+        <div class="right">
+          <strong>${brl(p.market)}</strong>
+          <div class="small">Atual ${brl(p.current)}</div>
+        </div>
+      </div>
+      <div class="sub-grid">
+        <div><div class="sub-label">Preço médio</div><div class="sub-value">${brl(p.avg)}</div></div>
+        <div><div class="sub-label">Resultado</div><div class="sub-value" style="color:${p.unrealized<0?'var(--danger)':'var(--success)'}">${p.unrealized>=0?'+':''}${brl(p.unrealized)}</div></div>
+      </div>
+      <div class="actions">
+        <button class="ghost" onclick="updatePrice('${esc(p.ticker)}')">Atualizar preço</button>
+        <button class="ghost" onclick="showTrade('${esc(p.ticker)}')">Operar</button>
+      </div>
+    </div>`).join(''):'<div class="empty">Nenhuma posição ainda.<br>Toque em <b>Operação</b> para registrar a primeira compra.</div>';
+  const history=state.trades.slice().reverse().slice(0,8);
+  document.getElementById('history').innerHTML=history.length?history.map(t=>`
+    <div class="asset">
+      <div class="assetTop">
+        <div>
+          <strong>${t.side==='buy'?'Compra':'Venda'} · ${esc(t.ticker)}</strong>
+          <div class="small">${esc(t.date)} · ${t.qty} un. a ${brl(t.price)}</div>
+        </div>
+        <strong>${brl(t.qty*t.price+t.fees)}</strong>
+      </div>
+    </div>`).join(''):'<div class="empty">Nenhuma operação registrada.</div>';
+  renderCatalog(document.getElementById('catalogSearch').value||'');
+}
+function renderCatalog(q=''){
+  q=q.toLowerCase();
+  let items=catalog().filter(a=>(a.ticker+' '+a.name+' '+a.type).toLowerCase().includes(q)).slice(0,70);
+  document.getElementById('catalogList').innerHTML=items.map(a=>`
+    <div class="asset">
+      <div class="assetTop">
+        <div><strong>${esc(a.ticker)}</strong><div class="small">${esc(a.name)}</div></div>
+        <span class="pill">${esc(a.type)}</span>
+      </div>
+    </div>`).join('')||'<div class="empty">Nada encontrado. Cadastre um ativo personalizado abaixo.</div>';
+}
+function choose(a){
+  document.getElementById('chosenTicker').value=a.ticker;
+  document.getElementById('assetSearch').value=a.ticker+' — '+a.name;
+  document.getElementById('selectedTicker').textContent=a.ticker;
+  document.getElementById('selectedName').textContent=a.name;
+  document.getElementById('selectedType').textContent='Categoria: '+a.type;
+  document.getElementById('selectedBox').classList.remove('hidden');
+  document.getElementById('suggestions').classList.add('hidden');
+}
+document.getElementById('assetSearch').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase();
+  const matches=catalog().filter(a=>(a.ticker+' '+a.name).toLowerCase().includes(q)).slice(0,12);
+  const box=document.getElementById('suggestions');
+  box.innerHTML=matches.map((a,i)=>`<button type="button" class="suggestion" data-index="${i}"><span><strong>${esc(a.ticker)}</strong><br><small style="color:var(--muted)">${esc(a.name)}</small></span><span class="pill">${esc(a.type)}</span></button>`).join('');
+  box.classList.toggle('hidden',!q||!matches.length);
+  box.querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>choose(matches[i])));
+  document.getElementById('chosenTicker').value='';
+  document.getElementById('selectedBox').classList.add('hidden');
+});
+document.getElementById('tradeDate').value=today();
+document.getElementById('tradeForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const ticker=document.getElementById('chosenTicker').value,
+        side=document.getElementById('operation').value,
+        qty=num(document.getElementById('tradeQty').value),
+        price=num(document.getElementById('tradePrice').value),
+        fees=num(document.getElementById('fees').value);
+  if(!ticker||qty<=0||price<=0){alert('Escolha um ativo e informe quantidade e preço válidos.');return}
+  const p=positions().find(x=>x.ticker===ticker);
+  if(side==='sell'&&(!p||qty>p.qty+1e-8)){alert('Quantidade maior que a posição disponível.');return}
+  state.trades.push({ticker,side,qty,price,fees,date:document.getElementById('tradeDate').value||today()});
+  if(state.prices[ticker]===undefined)state.prices[ticker]=price;
+  save();e.target.reset();
+  document.getElementById('tradeDate').value=today();
+  document.getElementById('assetSearch').value='';
+  document.getElementById('chosenTicker').value='';
+  document.getElementById('selectedBox').classList.add('hidden');
+  document.querySelector('[data-tab="portfolio"]').click();
+});
+window.updatePrice=ticker=>{
+  const p=positions().find(x=>x.ticker===ticker);
+  const v=prompt('Preço atual de '+ticker+' (R$):',String(p
