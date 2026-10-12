@@ -14,8 +14,7 @@ const isRFTicker = t => RF_TICKERS.includes(t);
 let state = {
   catalog: [], trades: [], dividends: [], prices: {},
   apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '',
-  cdiRate: 13.65, cdiLastUpdate: null,
-  rfAutoProject: true, rfLastProjection: null
+  cdiRate: 13.65, cdiLastUpdate: null, rfLastProjection: null
 };
 try {
   const raw = localStorage.getItem(KEY);
@@ -30,7 +29,6 @@ try {
     if (s.lastSource) state.lastSource = s.lastSource;
     if (typeof s.cdiRate === 'number' && s.cdiRate > 0) state.cdiRate = s.cdiRate;
     if (s.cdiLastUpdate) state.cdiLastUpdate = s.cdiLastUpdate;
-    if (typeof s.rfAutoProject === 'boolean') state.rfAutoProject = s.rfAutoProject;
     if (s.rfLastProjection) state.rfLastProjection = s.rfLastProjection;
   }
 } catch (e) { console.warn('Erro lendo estado', e); }
@@ -44,14 +42,17 @@ const $ = id => document.getElementById(id);
 function save() { localStorage.setItem(KEY, JSON.stringify(state)); render(); }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-/* ---------- Helpers RF / CDI ---------- */
+/* ---------- Helpers RF / CDI (ticket interno) ---------- */
 function isRFComposite(t) { return t && t.indexOf('@') !== -1; }
 function rfBase(t) { return isRFComposite(t) ? t.split('@')[0] : t; }
 function rfPct(t) { return isRFComposite(t) ? (parseFloat(t.split('@')[1]) || 100) : 100; }
 function buildRFTicker(base, pct) { return `${base}@${pct}`; }
 function displayTicker(t) {
   if (!t) return '';
-  if (isRFComposite(t)) { const [b, p] = t.split('@'); return p === '100' ? b : `${b} · ${p}% CDI`; }
+  if (isRFComposite(t)) {
+    const [b, p] = t.split('@');
+    return (p === '100' || Number(p) === 100) ? b : `${b} · ${p}% CDI`;
+  }
   return t;
 }
 function catalogEntry(ticker) {
@@ -67,7 +68,7 @@ function isRFAsset(ticker) {
   return c?.type === 'Renda fixa';
 }
 
-/* ---------- Migração: RF antigo sem @ vira @100 ---------- */
+/* ---------- Migração RF antigo ---------- */
 (function migrateRF() {
   const map = {};
   for (const t of state.trades) {
@@ -126,7 +127,7 @@ function parseNum(str) {
 function numToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function qtyToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 8 }); }
 
-/* ---------- Projeção de rendimento RF ---------- */
+/* ---------- Projeção RF (sempre automática) ---------- */
 function projectRFBalance(ticker) {
   const trades = state.trades.filter(t => t.ticker === ticker);
   if (!trades.length) return 0;
@@ -145,7 +146,6 @@ function projectRFBalance(ticker) {
   return Math.max(0, balance);
 }
 function runRFProjection(force) {
-  if (!state.rfAutoProject && !force) return;
   const todayStr = today();
   if (!force && state.rfLastProjection === todayStr) return;
   const tickers = new Set(state.trades.map(t => t.ticker).filter(isRFAsset));
@@ -279,7 +279,7 @@ function render() {
     const displayName = displayTicker(p.ticker);
     const cdiTag = p.isRF && rfPct(p.ticker) !== 100 ? `<span class="pill pill-cdi">${rfPct(p.ticker)}% CDI</span>` : '';
     if (p.isRF) {
-      const cdiInfo = `CDI ${rfPct(p.ticker)}% · Taxa ${state.cdiRate.toFixed(2)}% a.a.${state.rfAutoProject ? ' (projetado)' : ''}`;
+      const cdiInfo = `CDI ${rfPct(p.ticker)}% · Taxa atual ${state.cdiRate.toFixed(2)}% a.a.`;
       return `<div class="asset">
         <div class="assetTop">
           <div>
@@ -301,7 +301,6 @@ function render() {
           <button type="button" class="ghost-sm" onclick="showProvento('${esc(p.ticker)}')">Provento</button>
         </div>
         <div class="danger-actions">
-          <button type="button" class="mini-btn zero" onclick="zeroPosition('${esc(p.ticker)}')">Zerar</button>
           <button type="button" class="mini-btn remove" onclick="removePosition('${esc(p.ticker)}')">Remover</button>
         </div>
       </div>`;
@@ -327,7 +326,6 @@ function render() {
         <button type="button" class="ghost-sm" onclick="showProvento('${esc(p.ticker)}')">Provento</button>
       </div>
       <div class="danger-actions">
-        <button type="button" class="mini-btn zero" onclick="zeroPosition('${esc(p.ticker)}')">Zerar</button>
         <button type="button" class="mini-btn remove" onclick="removePosition('${esc(p.ticker)}')">Remover</button>
       </div>
     </div>`;
@@ -336,9 +334,8 @@ function render() {
   renderTradeHistory(); renderDivHistory();
   $('autoRefreshSelect').value = String(state.autoRefresh || 0);
   $('cdiRateInput').value = numToBR(state.cdiRate);
-  $('rfAutoProjectChk').checked = !!state.rfAutoProject;
   const cdiStatus = $('cdiStatus');
-  cdiStatus.textContent = state.cdiLastUpdate ? ('Taxa CDI atualizada ' + timeAgo(state.cdiLastUpdate)) : 'Taxa CDI manual (nunca sincronizada)';
+  cdiStatus.textContent = state.cdiLastUpdate ? ('Taxa CDI sincronizada ' + timeAgo(state.cdiLastUpdate)) : 'Taxa CDI manual';
   cdiStatus.className = 'cdi-status' + (state.cdiLastUpdate ? ' ok' : '');
 }
 
@@ -407,7 +404,7 @@ window.updatePrice = async function(ticker) {
   const n = parseMoneyBR(v);
   if (!Number.isFinite(n) || n <= 0) { alert('Informe um valor maior que zero.'); return; }
   state.prices[ticker] = n;
-  if (isRF) state.rfLastProjection = null; // permitir próxima projeção se o usuário desligar/mexer
+  if (isRF) state.rfLastProjection = null;
   save();
 };
 
@@ -443,25 +440,6 @@ window.removePosition = function(ticker) {
   alert('Investimento removido.');
 };
 
-window.zeroPosition = function(ticker) {
-  const p = positions().find(x => x.ticker === ticker);
-  if (!p) return;
-  const nome = displayTicker(ticker);
-  if (!confirm(`Zerar a posição de "${nome}"?\n\nIsso registra uma ${p.isRF ? 'resgate' : 'venda'} fechando a posição, mas mantém o histórico de operações e proventos.`)) return;
-  const date = today();
-  if (p.isRF) {
-    const valor = p.market;
-    if (valor <= 0) { alert('Saldo zerado.'); return; }
-    state.trades.push({ ticker, side: 'sell', qty: 1, price: valor, fees: 0, date, pctCDI: p.pctCDI || 100 });
-  } else {
-    if (p.qty <= 0) return;
-    state.trades.push({ ticker, side: 'sell', qty: p.qty, price: p.current, fees: 0, date });
-  }
-  delete state.prices[ticker];
-  save();
-  alert('Posição zerada. O histórico ficou salvo.');
-};
-
 async function fetchPriceFromBrapi(ticker) {
   if (!state.apiKey) return null;
   try {
@@ -494,7 +472,7 @@ async function refreshQuotes() {
   const ps = positions();
   if (!ps.length) { alert('Sem posições para atualizar.'); return; }
   const tickers = ps.filter(p => !p.isRF).map(p => p.ticker);
-  if (!tickers.length) { alert('Só há renda fixa. Use "Atualizar saldo" ou a projeção automática.'); return; }
+  if (!tickers.length) { alert('Só há renda fixa. A projeção automática cuida dos saldos.'); return; }
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Buscando cotações…';
   let updated = 0, failed = [], sourceUsed = '';
   for (const tk of tickers) {
@@ -566,18 +544,6 @@ $('refreshBtn').addEventListener('click', refreshQuotes);
 $('fetchCdiBtn').addEventListener('click', fetchCDIFromBCB);
 $('operation').addEventListener('change', () => { if (!$('tradeRFFields').classList.contains('hidden')) updateRFLabel(); });
 
-$('rfAutoProjectChk').addEventListener('change', e => {
-  state.rfAutoProject = e.target.checked;
-  if (state.rfAutoProject) { state.rfLastProjection = null; runRFProjection(true); }
-  save();
-});
-
-$('projectNowBtn').addEventListener('click', () => {
-  runRFProjection(true);
-  save();
-  alert('Rendimentos recalculados com base na taxa CDI atual e nas datas de aplicação.');
-});
-
 $('assetSearch').addEventListener('input', e => {
   const raw = e.target.value.trim(); const q = raw.toLowerCase(); const upper = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
   const exact = catalog().find(a => a.ticker === upper);
@@ -628,14 +594,8 @@ $('tradeForm').addEventListener('submit', e => {
   state.trades.push(trade);
 
   if (isRF) {
-    if (state.rfAutoProject) {
-      state.rfLastProjection = null;
-      runRFProjection(true);
-    } else {
-      if (state.prices[finalTicker] === undefined) state.prices[finalTicker] = price;
-      else if (side === 'buy') state.prices[finalTicker] += price;
-      else state.prices[finalTicker] = Math.max(0, state.prices[finalTicker] - price);
-    }
+    state.rfLastProjection = null;
+    runRFProjection(true);
   } else {
     if (state.prices[finalTicker] === undefined) state.prices[finalTicker] = price;
   }
@@ -702,7 +662,6 @@ $('importFile').addEventListener('change', async e => {
       if (d.prices && typeof d.prices === 'object') state.prices = d.prices;
       if (d.lastUpdated) state.lastUpdated = d.lastUpdated;
       if (typeof d.cdiRate === 'number') state.cdiRate = d.cdiRate;
-      if (typeof d.rfAutoProject === 'boolean') state.rfAutoProject = d.rfAutoProject;
       save(); alert('Backup importado.');
     } else alert('Formato não reconhecido.');
   } catch (err) { alert('Não foi possível ler esse arquivo JSON.'); }
@@ -713,14 +672,14 @@ $('diagBtn').addEventListener('click', () => {
   try {
     const raw = localStorage.getItem(KEY) || '(vazio)';
     const parsed = raw !== '(vazio)' ? JSON.parse(raw) : null;
-    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nPreços salvos: ${Object.keys(parsed.prices || {}).length}\nCDI: ${parsed.cdiRate || '—'}%\nProjeção RF: ${parsed.rfAutoProject ? 'ligada' : 'desligada'}` : '(sem dados)';
+    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nPreços salvos: ${Object.keys(parsed.prices || {}).length}\nCDI: ${parsed.cdiRate || '—'}%` : '(sem dados)';
     alert('📦 Dados no aparelho:\n\n' + summary + '\n\nTamanho total: ' + raw.length + ' caracteres');
   } catch (e) { alert('Erro ao ler dados: ' + e.message); }
 });
 
 $('clearBtn').addEventListener('click', () => {
   if (confirm('Apagar carteira, operações, proventos e catálogo pessoal deste aparelho?')) {
-    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, cdiLastUpdate: null, rfAutoProject: true, rfLastProjection: null };
+    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, cdiLastUpdate: null, rfLastProjection: null };
     save();
   }
 });
