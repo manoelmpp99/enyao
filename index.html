@@ -41,6 +41,7 @@
   <section class="section" id="portfolio">
     <h2>Minha carteira</h2>
     <button type="button" class="ghost" id="refreshBtn" style="width:100%;margin-bottom:12px">🔄 Atualizar cotações agora</button>
+    <div id="allocation"></div>
     <div id="assets"></div>
   </section>
   <section class="section hidden" id="trade">
@@ -95,24 +96,21 @@
   </section>
   <section class="section hidden" id="backup">
     <h2>Ajustes</h2>
-    <label for="apiKeyInput">Chave da API brapi.dev</label>
-    <input id="apiKeyInput" type="password" placeholder="Usando chave padrão do app">
-    <p class="notice">O app já vem com uma chave configurada. Você só mexe aqui se quiser usar a sua própria.</p>
-    <button id="saveApiKey" class="primary" style="margin-top:12px">Salvar minha chave</button>
-    <button id="removeApiKey" class="danger" style="margin-top:10px">Voltar para a chave padrão</button>
-    <label style="margin-top:24px">Auto-atualização</label>
+    <label style="margin-top:0">Auto-atualização de cotações</label>
     <select id="autoRefreshSelect">
-      <option value="0">Desativada</option><option value="5">5 minutos</option>
-      <option value="15">15 minutos</option><option value="30">30 minutos</option>
+      <option value="0">Desativada</option><option value="5">A cada 5 minutos</option>
+      <option value="15">A cada 15 minutos</option><option value="30">A cada 30 minutos</option>
     </select>
+    <p class="notice">Ativa a busca de cotações automaticamente enquanto o app estiver aberto.</p>
+
     <h2 style="margin-top:28px">Backup</h2>
-    <button id="exportBtn" class="primary">Exportar backup</button>
+    <button id="exportBtn" class="primary">Exportar backup (JSON)</button>
     <label for="importFile" style="margin-top:16px">Importar backup</label>
     <input type="file" id="importFile" accept=".json,application/json">
+
     <h2 style="margin-top:28px">Diagnóstico</h2>
     <button id="diagBtn" class="ghost" style="width:100%">Ver dados salvos</button>
     <button id="clearBtn" class="danger" style="margin-top:18px">Apagar todos os dados</button>
-    <div class="warn" style="margin-top:20px"><b>Aviso:</b> a chave padrão fica visível no código público. Para uso com amigos próximos, ok. Para escalar, o ideal é um servidor (proxy).</div>
   </section>
 </main>
 <nav class="tabs"><div class="tabs-inner">
