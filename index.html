@@ -41,9 +41,11 @@
   <section class="section" id="portfolio">
     <h2>Minha carteira</h2>
     <button type="button" class="ghost" id="refreshBtn" style="width:100%;margin-bottom:12px">🔄 Atualizar cotações agora</button>
+    <div id="evolution"></div>
     <div id="allocation"></div>
     <div id="assets"></div>
   </section>
+
   <section class="section hidden" id="trade">
     <h2>Registrar operação</h2>
     <label for="assetSearch">Ativo</label>
@@ -62,28 +64,39 @@
         <option value="buy">Compra</option>
         <option value="sell">Venda</option>
       </select>
-
       <div id="tradeRegularFields">
         <div class="grid">
           <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="text" inputmode="decimal" placeholder="10"></div>
           <div><label for="tradePrice">Preço unitário</label><input id="tradePrice" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
         </div>
       </div>
-
       <div id="tradeRFFields" class="hidden">
         <label for="tradeRFValue">Valor <span id="rfValueLabel">aplicado</span></label>
         <input id="tradeRFValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
         <label for="tradeRFPct">Percentual do CDI (%)</label>
         <input id="tradeRFPct" type="text" inputmode="decimal" value="100" placeholder="100">
       </div>
-
       <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
       <label for="fees">Custos (opcional)</label><input id="fees" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
       <button type="submit" class="primary" style="margin-top:18px">Salvar operação</button>
     </form>
+
+    <h2 style="margin-top:24px">Importar nota de corretagem</h2>
+    <p class="notice">Cole o texto da nota (formatos comuns de corretora) ou uma lista no formato <b>TICKER, TIPO(C/V), QTD, PREÇO, DATA</b> — uma por linha.</p>
+    <textarea id="notaInput" class="import-area" placeholder="Ex.:
+MXRF11 C 10 9,85 2025-01-15
+HGLG11 C 5 165,50 2025-01-15
+PETR4 V 100 38,20 2025-01-20"></textarea>
+    <div class="grid" style="margin-top:10px">
+      <button type="button" id="notaAnalyzeBtn" class="ghost">Analisar texto</button>
+      <button type="button" id="notaExampleBtn" class="ghost">Ver exemplo</button>
+    </div>
+    <div id="notaPreview" class="hidden" style="margin-top:12px"></div>
+
     <h2 style="margin-top:24px">Histórico de operações</h2>
     <div id="tradeHistory"></div>
   </section>
+
   <section class="section hidden" id="dividends">
     <h2>Proventos</h2>
     <button type="button" class="primary-div" id="toggleDivForm">+ Registrar provento</button>
@@ -109,6 +122,13 @@
     <h2 style="margin-top:24px">Histórico</h2>
     <div id="divHistory"></div>
   </section>
+
+  <section class="section hidden" id="ir">
+    <h2>Imposto de Renda</h2>
+    <p class="notice">Estimativa com base nas vendas registradas. Regras: ações isentas até R$ 20.000/mês de vendas (15% acima); FIIs 20% sempre; ETFs 15%. Não considera prejuízo acumulado nem day trade.</p>
+    <div id="irContent"></div>
+  </section>
+
   <section class="section hidden" id="backup">
     <h2>Ajustes</h2>
     <label style="margin-top:0">Auto-atualização de cotações (ações/FIIs)</label>
@@ -118,12 +138,10 @@
     </select>
 
     <h2 style="margin-top:24px">Taxa CDI</h2>
-    <p class="notice">Usada para projetar automaticamente o saldo da renda fixa todo dia.</p>
-    <div class="grid" style="margin-top:8px">
-      <div><label>Taxa CDI atual (% a.a.)</label><input id="cdiRateInput" class="money-input" type="text" inputmode="numeric" placeholder="13,65"></div>
-      <div style="display:flex;align-items:flex-end"><button id="fetchCdiBtn" class="primary" style="width:100%">Buscar BCB</button></div>
-    </div>
-    <div id="cdiStatus" class="cdi-status"></div>
+    <p class="notice">Usada para projetar o saldo da renda fixa automaticamente todo dia.</p>
+    <label>Taxa CDI atual (% a.a.)</label>
+    <input id="cdiRateInput" class="money-input" type="text" inputmode="numeric" placeholder="13,65">
+    <p class="notice">Atualize manualmente quando o CDI mudar. A projeção aplica juros todos os dias.</p>
 
     <h2 style="margin-top:28px">Backup</h2>
     <button id="exportBtn" class="primary">Exportar backup (JSON)</button>
@@ -147,6 +165,10 @@
   <button type="button" data-tab="dividends" onclick="showTab('dividends')">
     <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     <span>Proventos</span>
+  </button>
+  <button type="button" data-tab="ir" onclick="showTab('ir')">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+    <span>IR</span>
   </button>
   <button type="button" data-tab="backup" onclick="showTab('backup')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
