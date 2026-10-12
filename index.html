@@ -36,7 +36,7 @@ body{
   color:var(--text);
   font:15px -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
   min-height:100vh;
-  padding-bottom:100px;
+  padding-bottom:110px;
   -webkit-font-smoothing:antialiased;
   overscroll-behavior-y:none;
 }
@@ -80,8 +80,8 @@ main{padding:22px 18px 0;max-width:600px;margin:0 auto}
   border-radius:18px;padding:18px;margin-bottom:14px;
 }
 .section h2{font-size:16px;font-weight:700;margin:0 0 14px;letter-spacing:-.3px}
-button{border:0;border-radius:14px;font:inherit;cursor:pointer;transition:transform .08s,filter .2s}
-button:active{transform:scale(.98)}
+button{border:0;border-radius:14px;font:inherit;cursor:pointer;transition:transform .08s,filter .2s;-webkit-user-select:none;user-select:none}
+button:active{transform:scale(.97);filter:brightness(.9)}
 .primary{
   background:var(--gradient);color:#fff;font-weight:700;font-size:15px;
   padding:15px 16px;width:100%;
@@ -91,12 +91,13 @@ button:active{transform:scale(.98)}
   background:var(--surface-2);color:var(--text);font-weight:600;
   border:1px solid var(--border-strong);padding:11px 14px;font-size:13px;
 }
-.danger{background:rgba(255,77,128,.08);color:var(--danger);border:1px solid rgba(255,77,128,.22);font-weight:600;padding:13px}
+.danger{background:rgba(255,77,128,.08);color:var(--danger);border:1px solid rgba(255,77,128,.22);font-weight:600;padding:13px;width:100%}
 input,select{
   width:100%;padding:13px 14px;
   background:var(--surface-2);color:var(--text);
   border:1px solid var(--border-strong);border-radius:12px;font:inherit;
   transition:border-color .15s,background .15s;
+  -webkit-appearance:none;appearance:none;
 }
 input:focus,select:focus{outline:0;border-color:var(--pink);background:var(--surface)}
 label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
@@ -129,7 +130,7 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
   border-radius:0;padding:12px 14px;
 }
 .suggestion:last-child{border-bottom:0}
-.suggestion:hover,.suggestion:active{background:var(--surface-2)}
+.suggestion:active{background:var(--surface-2)}
 .searchResults{
   background:var(--surface);border:1px solid var(--border-strong);
   border-radius:12px;margin-top:8px;max-height:220px;overflow:auto;
@@ -140,25 +141,25 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 }
 .result-box strong{font-size:16px;letter-spacing:-.3px}
 .tabs{
-  position:fixed;bottom:0;left:0;right:0;z-index:100;
-  background:rgba(5,5,8,.82);
+  position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:rgba(5,5,8,.9);
   backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
   border-top:1px solid var(--border);
-  display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
 }
-.tabs-inner{display:flex;width:100%;max-width:600px;margin:0 auto}
+.tabs-inner{display:flex;width:100%;max-width:600px;margin:0 auto;gap:4px}
 .tabs button{
   flex:1;background:none;color:var(--muted);
-  font-size:10px;font-weight:600;padding:8px 4px;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-size:10px;font-weight:600;padding:10px 4px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
   border-radius:12px;letter-spacing:.2px;
+  min-height:56px;
+  touch-action:manipulation;
 }
 .tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:filter .2s;pointer-events:none}
-.tabs button span{pointer-events:none}
-.tabs button.active{color:var(--text)}
-.tabs button.active svg{stroke:var(--pink);filter:drop-shadow(0 0 10px rgba(236,72,153,.7))}
+.tabs button span{pointer-events:none;color:inherit}
 .tabs button.active{color:var(--pink)}
-.tabs button span{color:inherit}
+.tabs button.active svg{stroke:var(--pink);filter:drop-shadow(0 0 10px rgba(236,72,153,.7))}
 </style>
 </head>
 <body>
@@ -227,7 +228,7 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 <button id="exportBtn" class="primary" style="margin-top:14px">Exportar backup (JSON)</button>
 <label for="importFile" style="margin-top:16px">Importar backup</label>
 <input type="file" id="importFile" accept=".json,application/json">
-<button id="clearBtn" class="danger" style="width:100%;margin-top:18px">Apagar todos os dados</button>
+<button id="clearBtn" class="danger" style="margin-top:18px">Apagar todos os dados</button>
 </section>
 
 <section class="section"><h2>Histórico recente</h2><div id="history"></div>
@@ -236,19 +237,19 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 </main>
 
 <nav class="tabs"><div class="tabs-inner">
-  <button class="active" data-tab="portfolio">
+  <button type="button" class="active" data-tab="portfolio" onclick="showTab('portfolio')">
     <svg viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7"/></svg>
     <span>Carteira</span>
   </button>
-  <button data-tab="trade">
+  <button type="button" data-tab="trade" onclick="showTab('trade')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
     <span>Operação</span>
   </button>
-  <button data-tab="catalog">
+  <button type="button" data-tab="catalog" onclick="showTab('catalog')">
     <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
     <span>Catálogo</span>
   </button>
-  <button data-tab="backup">
+  <button type="button" data-tab="backup" onclick="showTab('backup')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     <span>Ajustes</span>
   </button>
@@ -270,7 +271,32 @@ const num=n=>Number(n||0);
 const today=()=>new Date().toLocaleDateString('en-CA');
 function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function positions(){let m={};for(const t of state.trades){let p=m[t.ticker]||(m[t.ticker]={ticker:t.ticker,qty:0,cost:0,realized:0});if(t.side==='buy'){p.cost+=t.qty*t.price+t.fees;p.qty+=t.qty}else{let avg=p.qty?p.cost/p.qty:0;let sold=Math.min(t.qty,p.qty);p.realized+=(t.price*sold-t.fees)-(avg*sold);p.cost-=avg*sold;p.qty-=sold;if(p.qty<1e-8){p.qty=0;p.cost=0}}}return Object.values(m).filter(p=>p.qty>1e-8).map(p=>{const c=catalog().find(x=>x.ticker===p.ticker);p.avg=p.qty?p.cost/p.qty:0;p.current=num(state.prices[p.ticker]??p.avg);p.market=p.qty*p.current;p.unrealized=p.market-p.cost;p.name=c?.name||p.ticker;p.type=c?.type||'Outro';return p})}
+
+function positions(){
+  let m={};
+  for(const t of state.trades){
+    let p=m[t.ticker]||(m[t.ticker]={ticker:t.ticker,qty:0,cost:0,realized:0});
+    if(t.side==='buy'){p.cost+=t.qty*t.price+t.fees;p.qty+=t.qty}
+    else{
+      let avg=p.qty?p.cost/p.qty:0;
+      let sold=Math.min(t.qty,p.qty);
+      p.realized+=(t.price*sold-t.fees)-(avg*sold);
+      p.cost-=avg*sold;p.qty-=sold;
+      if(p.qty<1e-8){p.qty=0;p.cost=0}
+    }
+  }
+  return Object.values(m).filter(p=>p.qty>1e-8).map(p=>{
+    const c=catalog().find(x=>x.ticker===p.ticker);
+    p.avg=p.qty?p.cost/p.qty:0;
+    p.current=num(state.prices[p.ticker]??p.avg);
+    p.market=p.qty*p.current;
+    p.unrealized=p.market-p.cost;
+    p.name=c?.name||p.ticker;
+    p.type=c?.type||'Outro';
+    return p;
+  });
+}
+
 function render(){
   const ps=positions(),total=ps.reduce((s,p)=>s+p.market,0),profit=ps.reduce((s,p)=>s+p.unrealized,0);
   document.getElementById('total').textContent=brl(total);
@@ -295,8 +321,8 @@ function render(){
         <div><div class="sub-label">Resultado</div><div class="sub-value" style="color:${p.unrealized<0?'var(--danger)':'var(--success)'}">${p.unrealized>=0?'+':''}${brl(p.unrealized)}</div></div>
       </div>
       <div class="actions">
-        <button class="ghost" onclick="updatePrice('${esc(p.ticker)}')">Atualizar preço</button>
-        <button class="ghost" onclick="showTrade('${esc(p.ticker)}')">Operar</button>
+        <button type="button" class="ghost" onclick="updatePrice('${esc(p.ticker)}')">Atualizar preço</button>
+        <button type="button" class="ghost" onclick="showTrade('${esc(p.ticker)}')">Operar</button>
       </div>
     </div>`).join(''):'<div class="empty">Nenhuma posição ainda.<br>Toque em <b>Operação</b> para registrar a primeira compra.</div>';
   const history=state.trades.slice().reverse().slice(0,8);
@@ -312,6 +338,7 @@ function render(){
     </div>`).join(''):'<div class="empty">Nenhuma operação registrada.</div>';
   renderCatalog(document.getElementById('catalogSearch').value||'');
 }
+
 function renderCatalog(q=''){
   q=q.toLowerCase();
   let items=catalog().filter(a=>(a.ticker+' '+a.name+' '+a.type).toLowerCase().includes(q)).slice(0,70);
@@ -323,6 +350,7 @@ function renderCatalog(q=''){
       </div>
     </div>`).join('')||'<div class="empty">Nada encontrado. Cadastre um ativo personalizado abaixo.</div>';
 }
+
 function choose(a){
   document.getElementById('chosenTicker').value=a.ticker;
   document.getElementById('assetSearch').value=a.ticker+' — '+a.name;
@@ -332,6 +360,31 @@ function choose(a){
   document.getElementById('selectedBox').classList.remove('hidden');
   document.getElementById('suggestions').classList.add('hidden');
 }
+
+window.showTab=function(id){
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));
+  ['portfolio','trade','catalog','backup'].forEach(t=>{
+    const el=document.getElementById(t);
+    if(el)el.classList.toggle('hidden',t!==id);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.updatePrice=function(ticker){
+  const p=positions().find(x=>x.ticker===ticker);
+  const v=prompt('Preço atual de '+ticker+' (R$):',String(p?.current||''));
+  if(v===null)return;
+  const n=Number(v.replace(',','.'));
+  if(!Number.isFinite(n)||n<=0){alert('Informe um preço maior que zero.');return}
+  state.prices[ticker]=n;save();
+};
+
+window.showTrade=function(ticker){
+  window.showTab('trade');
+  const a=catalog().find(x=>x.ticker===ticker)||{ticker,name:ticker,type:'Outro'};
+  choose(a);
+};
+
 document.getElementById('assetSearch').addEventListener('input',e=>{
   const q=e.target.value.toLowerCase();
   const matches=catalog().filter(a=>(a.ticker+' '+a.name).toLowerCase().includes(q)).slice(0,12);
@@ -342,7 +395,9 @@ document.getElementById('assetSearch').addEventListener('input',e=>{
   document.getElementById('chosenTicker').value='';
   document.getElementById('selectedBox').classList.add('hidden');
 });
+
 document.getElementById('tradeDate').value=today();
+
 document.getElementById('tradeForm').addEventListener('submit',e=>{
   e.preventDefault();
   const ticker=document.getElementById('chosenTicker').value,
@@ -360,8 +415,53 @@ document.getElementById('tradeForm').addEventListener('submit',e=>{
   document.getElementById('assetSearch').value='';
   document.getElementById('chosenTicker').value='';
   document.getElementById('selectedBox').classList.add('hidden');
-  document.querySelector('[data-tab="portfolio"]').click();
+  window.showTab('portfolio');
 });
-window.updatePrice=ticker=>{
-  const p=positions().find(x=>x.ticker===ticker);
-  const v=prompt('Preço atual de '+ticker+' (R$):',String(p
+
+document.getElementById('catalogSearch').addEventListener('input',e=>renderCatalog(e.target.value));
+
+document.getElementById('customBtn').addEventListener('click',()=>document.getElementById('customForm').classList.toggle('hidden'));
+
+document.getElementById('saveCustom').addEventListener('click',()=>{
+  const ticker=document.getElementById('customTicker').value.trim().toUpperCase(),
+        name=document.getElementById('customName').value.trim(),
+        type=document.getElementById('customType').value;
+  if(!ticker||!name){alert('Preencha o ticker e o nome.');return}
+  if(catalog().some(a=>a.ticker===ticker)){alert('Esse ticker já está no catálogo.');return}
+  state.catalog.push({ticker,name,type,custom:true});save();
+  document.getElementById('customTicker').value='';
+  document.getElementById('customName').value='';
+  document.getElementById('customForm').classList.add('hidden');
+  alert('Ativo adicionado.');
+});
+
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=u;a.download='enyao-backup.json';a.click();URL.revokeObjectURL(u);
+});
+
+document.getElementById('importFile').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(d.trades&&Array.isArray(d.trades)){state={...state,...d};save();alert('Backup importado.')}
+    else alert('Formato não reconhecido.');
+  }catch(err){alert('Não foi possível ler esse arquivo JSON.')}
+  e.target.value='';
+});
+
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  if(confirm('Apagar carteira, operações e catálogo pessoal deste aparelho? Faça backup antes.')){
+    state={catalog:[],trades:[],dividends:[],prices:{}};save();
+  }
+});
+
+render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
