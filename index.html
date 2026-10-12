@@ -66,17 +66,17 @@
       <div id="tradeRegularFields">
         <div class="grid">
           <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="text" inputmode="decimal" placeholder="10"></div>
-          <div><label for="tradePrice">Preço unit. (R$)</label><input id="tradePrice" type="text" inputmode="decimal" placeholder="6,99"></div>
+          <div><label for="tradePrice">Preço unitário</label><input id="tradePrice" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
         </div>
       </div>
 
       <div id="tradeRFFields" class="hidden">
-        <label for="tradeRFValue">Valor <span id="rfValueLabel">aplicado</span> (R$)</label>
-        <input id="tradeRFValue" type="text" inputmode="decimal" placeholder="1.000,00">
+        <label for="tradeRFValue">Valor <span id="rfValueLabel">aplicado</span></label>
+        <input id="tradeRFValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
       </div>
 
       <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
-      <label for="fees">Custos (R$)</label><input id="fees" type="text" inputmode="decimal" value="0">
+      <label for="fees">Custos (opcional)</label><input id="fees" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
       <button type="submit" class="primary" style="margin-top:18px">Salvar operação</button>
     </form>
     <h2 style="margin-top:24px">Histórico de operações</h2>
@@ -96,7 +96,7 @@
       <form id="divForm">
         <input type="hidden" id="divChosenTicker">
         <div class="grid">
-          <div><label for="divAmount">Valor (R$)</label><input id="divAmount" type="text" inputmode="decimal" placeholder="12,50"></div>
+          <div><label for="divAmount">Valor</label><input id="divAmount" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
           <div><label for="divDate">Data</label><input id="divDate" type="date" required></div>
         </div>
         <label for="divKind">Tipo</label>
@@ -144,6 +144,22 @@
     <span>Ajustes</span>
   </button>
 </div></nav>
+
+<!-- Modal para atualizar preço/saldo -->
+<div id="modalOverlay" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-title" id="modalTitle">Atualizar</div>
+    <div class="modal-input-wrap">
+      <span class="modal-currency">R$</span>
+      <input id="modalInput" class="modal-input" type="text" inputmode="numeric" placeholder="0,00">
+    </div>
+    <div class="modal-actions">
+      <button type="button" id="modalCancel" class="ghost">Cancelar</button>
+      <button type="button" id="modalConfirm" class="primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
