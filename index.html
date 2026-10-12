@@ -73,6 +73,8 @@
       <div id="tradeRFFields" class="hidden">
         <label for="tradeRFValue">Valor <span id="rfValueLabel">aplicado</span></label>
         <input id="tradeRFValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+        <label for="tradeRFPct">Percentual do CDI (%)</label>
+        <input id="tradeRFPct" type="text" inputmode="decimal" value="100" placeholder="100">
       </div>
 
       <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
@@ -114,7 +116,14 @@
       <option value="0">Desativada</option><option value="5">A cada 5 minutos</option>
       <option value="15">A cada 15 minutos</option><option value="30">A cada 30 minutos</option>
     </select>
-    <p class="notice">Ativa a busca de cotações automaticamente enquanto o app estiver aberto.</p>
+
+    <h2 style="margin-top:24px">Taxa CDI</h2>
+    <p class="notice">Usada para calcular a projeção de renda fixa. Busca automática via BCB.</p>
+    <div class="grid" style="margin-top:8px">
+      <div><label>Taxa atual (% a.a.)</label><input id="cdiRateInput" class="money-input" type="text" inputmode="numeric" placeholder="13,65"></div>
+      <div style="display:flex;align-items:flex-end"><button id="fetchCdiBtn" class="primary" style="width:100%">Buscar do BCB</button></div>
+    </div>
+    <div id="cdiStatus" class="notice" style="margin-top:6px"></div>
 
     <h2 style="margin-top:28px">Backup</h2>
     <button id="exportBtn" class="primary">Exportar backup (JSON)</button>
@@ -145,7 +154,6 @@
   </button>
 </div></nav>
 
-<!-- Modal para atualizar preço/saldo -->
 <div id="modalOverlay" class="modal-overlay hidden">
   <div class="modal-card">
     <div class="modal-title" id="modalTitle">Atualizar</div>
