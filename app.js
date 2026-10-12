@@ -1,5 +1,6 @@
 const DEFAULT_API_KEY = 'n2jSRHKNBe1nYrLza56x6n';
 const KEY = 'enyao-v02';
+
 const baseCatalog = [
   ['MXRF11','Maxi Renda','FII'],['HGLG11','CSHG Logística','FII'],['VISC11','Vinci Shopping Centers','FII'],['XPML11','XP Malls','FII'],['KNRI11','Kinea Renda Imobiliária','FII'],['GARE11','Guardian Real Estate','FII'],['TRXF11','TRX Real Estate','FII'],['RECR11','FII REC Recebíveis Imobiliários','FII'],['LIFE11','Life Capital Partners','FII'],['XPCA11','XP Crédito Agrícola','FII'],['FGAA11','FG Agro','FII'],['AAZQ11','AZ Quest Sole','FII'],['IRIM11','Iridium Recebíveis Imobiliários','FII'],['KNCR11','Kinea Crédito Imobiliário','FII'],['KNIP11','Kinea Índices de Preços','FII'],['HGRU11','CSHG Renda Urbana','FII'],['XPLG11','XP Log','FII'],['BRCO11','Bresco Logística','FII'],['BTLG11','BTG Logística','FII'],['VILG11','Vinci Logística','FII'],['JSRE11','JS Real Estate','FII'],['RBRF11','RBR Alpha','FII'],['CPTS11','Capitânia Securities','FII'],['DEVA11','Devant Recebíveis','FII'],
   ['ITSA4','Itaúsa PN','Ação'],['ITUB4','Itaú Unibanco PN','Ação'],['PETR4','Petrobras PN','Ação'],['PETR3','Petrobras ON','Ação'],['VALE3','Vale ON','Ação'],['BBAS3','Banco do Brasil ON','Ação'],['WEGE3','WEG ON','Ação'],['BBDC4','Bradesco PN','Ação'],['BBDC3','Bradesco ON','Ação'],['ABEV3','Ambev ON','Ação'],['B3SA3','B3 ON','Ação'],['EGIE3','Engie Brasil ON','Ação'],['TAEE11','Taesa units','Ação'],['OPCT3','OceanPact ON','Ação'],['MGLU3','Magazine Luiza ON','Ação'],['LREN3','Lojas Renner ON','Ação'],['RENT3','Localiza ON','Ação'],['SUZB3','Suzano ON','Ação'],['PRIO3','PetroRio ON','Ação'],['RADL3','Raia Drogasil ON','Ação'],['RAIL3','Rumo ON','Ação'],['CSAN3','Cosan ON','Ação'],['ELET3','Eletrobras ON','Ação'],['ELET6','Eletrobras PNB','Ação'],['CMIG4','Cemig PN','Ação'],['SANB11','Santander units','Ação'],['BBSE3','BB Seguridade ON','Ação'],['CXSE3','Caixa Seguridade ON','Ação'],['VIVT3','Telefônica Brasil ON','Ação'],['TIMS3','TIM ON','Ação'],['NTCO3','Natura ON','Ação'],['HAPV3','Hapvida ON','Ação'],['RDOR3','Rede DOr ON','Ação'],['FLRY3','Fleury ON','Ação'],['CCRO3','CCR ON','Ação'],['SBSP3','Sabesp ON','Ação'],['CPLE6','Copel PNB','Ação'],['EQTL3','Equatorial ON','Ação'],['UGPA3','Ultrapar ON','Ação'],['CSNA3','CSN ON','Ação'],['GGBR4','Gerdau PN','Ação'],['GOAU4','Metalúrgica Gerdau PN','Ação'],['USIM5','Usiminas PNA','Ação'],['CYRE3','Cyrela ON','Ação'],['MRVE3','MRV ON','Ação'],['EZTC3','EZTec ON','Ação'],['DIRR3','Direcional ON','Ação'],['TEND3','Tenda ON','Ação'],['ALPA4','Alpargatas PN','Ação'],
@@ -14,7 +15,8 @@ const isRFTicker = t => RF_TICKERS.includes(t);
 let state = {
   catalog: [], trades: [], dividends: [], prices: {},
   apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '',
-  cdiRate: 13.65, cdiLastUpdate: null, rfLastProjection: null
+  cdiRate: 13.65, rfLastProjection: null,
+  history: []
 };
 try {
   const raw = localStorage.getItem(KEY);
@@ -28,8 +30,8 @@ try {
     if (typeof s.autoRefresh === 'number') state.autoRefresh = s.autoRefresh;
     if (s.lastSource) state.lastSource = s.lastSource;
     if (typeof s.cdiRate === 'number' && s.cdiRate > 0) state.cdiRate = s.cdiRate;
-    if (s.cdiLastUpdate) state.cdiLastUpdate = s.cdiLastUpdate;
     if (s.rfLastProjection) state.rfLastProjection = s.rfLastProjection;
+    if (Array.isArray(s.history)) state.history = s.history;
   }
 } catch (e) { console.warn('Erro lendo estado', e); }
 state.apiKey = DEFAULT_API_KEY;
@@ -42,17 +44,14 @@ const $ = id => document.getElementById(id);
 function save() { localStorage.setItem(KEY, JSON.stringify(state)); render(); }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-/* ---------- Helpers RF / CDI (ticket interno) ---------- */
+/* ---------- RF helpers ---------- */
 function isRFComposite(t) { return t && t.indexOf('@') !== -1; }
 function rfBase(t) { return isRFComposite(t) ? t.split('@')[0] : t; }
 function rfPct(t) { return isRFComposite(t) ? (parseFloat(t.split('@')[1]) || 100) : 100; }
 function buildRFTicker(base, pct) { return `${base}@${pct}`; }
 function displayTicker(t) {
   if (!t) return '';
-  if (isRFComposite(t)) {
-    const [b, p] = t.split('@');
-    return (p === '100' || Number(p) === 100) ? b : `${b} · ${p}% CDI`;
-  }
+  if (isRFComposite(t)) { const [b, p] = t.split('@'); return (Number(p) === 100) ? b : `${b} · ${p}% CDI`; }
   return t;
 }
 function catalogEntry(ticker) {
@@ -68,7 +67,6 @@ function isRFAsset(ticker) {
   return c?.type === 'Renda fixa';
 }
 
-/* ---------- Migração RF antigo ---------- */
 (function migrateRF() {
   const map = {};
   for (const t of state.trades) {
@@ -127,13 +125,12 @@ function parseNum(str) {
 function numToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function qtyToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 8 }); }
 
-/* ---------- Projeção RF (sempre automática) ---------- */
+/* ---------- RF projection ---------- */
 function projectRFBalance(ticker) {
   const trades = state.trades.filter(t => t.ticker === ticker);
   if (!trades.length) return 0;
   const pctContratado = rfPct(ticker);
-  const cdiAnual = state.cdiRate / 100;
-  const taxaAnual = cdiAnual * pctContratado / 100;
+  const taxaAnual = (state.cdiRate / 100) * pctContratado / 100;
   if (taxaAnual <= 0) return 0;
   let balance = 0;
   for (const t of trades) {
@@ -154,6 +151,21 @@ function runRFProjection(force) {
     if (projected > 0) state.prices[ticker] = projected;
   }
   state.rfLastProjection = todayStr;
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* ---------- Snapshot histórico ---------- */
+function recordSnapshot() {
+  const ps = positions();
+  const total = ps.reduce((s, p) => s + p.market, 0);
+  const cost = ps.reduce((s, p) => s + p.cost, 0);
+  if (total <= 0 && cost <= 0) return;
+  const todayStr = today();
+  if (!Array.isArray(state.history)) state.history = [];
+  const existing = state.history.find(h => h.date === todayStr);
+  if (existing) { existing.total = total; existing.cost = cost; }
+  else state.history.push({ date: todayStr, total, cost });
+  if (state.history.length > 730) state.history = state.history.slice(-730);
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
 }
 
@@ -240,6 +252,73 @@ function computeDividendTotals() {
   return { month, year };
 }
 
+/* ---------- Gráfico de evolução ---------- */
+function renderEvolution() {
+  const container = $('evolution');
+  const h = Array.isArray(state.history) ? state.history.slice() : [];
+  if (h.length < 2) {
+    container.innerHTML = `<div class="evo-card">
+      <div class="evo-title">Evolução do patrimônio</div>
+      <div class="evo-empty">O gráfico aparece a partir do segundo dia de uso.<br>Volte amanhã para ver a evolução. 📈</div>
+    </div>`;
+    return;
+  }
+  h.sort((a, b) => a.date.localeCompare(b.date));
+  const last = h[h.length - 1];
+  const first = h[0];
+  const diff = last.total - first.total;
+  const diffPct = first.total > 0 ? (diff / first.total) * 100 : 0;
+  const positive = diff >= 0;
+
+  const w = 100, height = 40, padY = 3;
+  const maxTotal = Math.max(...h.map(x => x.total));
+  const minTotal = Math.min(...h.map(x => x.total));
+  const range = (maxTotal - minTotal) || 1;
+  let linePath = '', areaPath = '';
+  h.forEach((point, i) => {
+    const x = h.length > 1 ? (i / (h.length - 1)) * w : 0;
+    const y = height - padY - ((point.total - minTotal) / range) * (height - padY * 2);
+    if (i === 0) { linePath += `M ${x} ${y}`; areaPath += `M ${x} ${height} L ${x} ${y}`; }
+    else { linePath += ` L ${x} ${y}`; areaPath += ` L ${x} ${y}`; }
+    if (i === h.length - 1) areaPath += ` L ${x} ${height} Z`;
+  });
+
+  const c1 = positive ? '#22d3ee' : '#ff4d80';
+  const c2 = positive ? '#ec4899' : '#a855f7';
+  const uid = 'evo' + Date.now();
+
+  const fmtDate = d => { const [y, m, day] = d.split('-'); return `${day}/${m}`; };
+
+  container.innerHTML = `<div class="evo-card">
+    <div class="evo-title">Evolução do patrimônio</div>
+    <div class="evo-value">${brl(last.total)}</div>
+    <div class="evo-pct" style="color:${positive ? 'var(--cyan)' : 'var(--danger)'}">
+      ${positive ? '+' : ''}${brl(diff)} (${pct(diffPct)}) desde ${fmtDate(first.date)}
+    </div>
+    <div class="evo-chart-wrap">
+      <svg viewBox="0 0 ${w} ${height}" preserveAspectRatio="none" class="evo-chart">
+        <defs>
+          <linearGradient id="${uid}-line" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="${c2}"/>
+            <stop offset="100%" stop-color="${c1}"/>
+          </linearGradient>
+          <linearGradient id="${uid}-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${c1}" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="${c1}" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="${areaPath}" fill="url(#${uid}-fill)"/>
+        <path d="${linePath}" fill="none" stroke="url(#${uid}-line)" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" style="stroke-width:2"/>
+      </svg>
+    </div>
+    <div class="evo-footer">
+      <span>${fmtDate(first.date)}</span>
+      <span>${h.length} ${h.length === 1 ? 'dia' : 'dias'} registrados</span>
+      <span>${fmtDate(last.date)}</span>
+    </div>
+  </div>`;
+}
+
 function renderAllocation(ps) {
   const container = $('allocation');
   if (!ps.length) { container.innerHTML = ''; return; }
@@ -259,6 +338,241 @@ function renderAllocation(ps) {
   container.innerHTML = `<div class="alloc-card"><div class="alloc-title">Alocação por classe</div><div class="alloc-body"><div class="donut-wrapper"><svg viewBox="0 0 42 42" class="donut"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="4.5"/><g transform="rotate(-90 21 21)">${segments}</g></svg></div><div class="alloc-legend">${legend}</div></div></div>`;
 }
 
+/* ---------- IR ---------- */
+function realizedEvents() {
+  const events = [];
+  const m = {};
+  const sorted = [...state.trades].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  for (const t of sorted) {
+    const c = catalogEntry(t.ticker);
+    const type = c?.type || 'Outro';
+    const rf = isRFAsset(t.ticker);
+    let p = m[t.ticker] || (m[t.ticker] = { qty: 0, cost: 0 });
+    if (t.side === 'buy') {
+      p.cost += t.qty * t.price + (t.fees || 0);
+      p.qty += t.qty;
+    } else {
+      const avg = p.qty ? p.cost / p.qty : 0;
+      const sold = Math.min(t.qty, p.qty);
+      const saleValue = t.qty * t.price;
+      const costBasis = avg * sold;
+      const fees = t.fees || 0;
+      const profit = (t.qty * t.price - fees) - costBasis;
+      events.push({ date: t.date, ticker: t.ticker, type, rf, saleValue, costBasis, fees, profit });
+      p.cost -= costBasis;
+      p.qty -= sold;
+      if (p.qty < 1e-8) { p.qty = 0; p.cost = 0; }
+    }
+  }
+  return events;
+}
+
+function computeIRReport() {
+  const events = realizedEvents();
+  const months = {};
+  for (const e of events) {
+    const ym = (e.date || '').slice(0, 7);
+    if (!ym) continue;
+    if (!months[ym]) months[ym] = [];
+    months[ym].push(e);
+  }
+  const report = [];
+  for (const [ym, sales] of Object.entries(months)) {
+    let acoesSales = 0, acoesProfit = 0, fiisSales = 0, fiisProfit = 0, etfSales = 0, etfProfit = 0, outrosSales = 0, outrosProfit = 0;
+    for (const s of sales) {
+      if (s.rf) continue;
+      if (s.type === 'Ação') { acoesSales += s.saleValue; acoesProfit += s.profit; }
+      else if (s.type === 'FII') { fiisSales += s.saleValue; fiisProfit += s.profit; }
+      else if (s.type === 'ETF') { etfSales += s.saleValue; etfProfit += s.profit; }
+      else { outrosSales += s.saleValue; outrosProfit += s.profit; }
+    }
+    const acoesIsento = acoesSales <= 20000;
+    const acoesIR = acoesIsento ? 0 : Math.max(0, acoesProfit) * 0.15;
+    const fiisIR = Math.max(0, fiisProfit) * 0.20;
+    const etfIR = Math.max(0, etfProfit) * 0.15;
+    const outrosIR = Math.max(0, outrosProfit) * 0.15;
+    const totalIR = acoesIR + fiisIR + etfIR + outrosIR;
+    report.push({ ym, acoesSales, acoesProfit, acoesIR, acoesIsento, fiisSales, fiisProfit, fiisIR, etfSales, etfProfit, etfIR, outrosSales, outrosProfit, outrosIR, totalIR });
+  }
+  return report.sort((a, b) => b.ym.localeCompare(a.ym));
+}
+
+function renderIR() {
+  const report = computeIRReport();
+  const container = $('irContent');
+  if (!report.length) {
+    container.innerHTML = `<div class="empty">Nenhuma venda registrada ainda.<br>Quando você vender ações, FIIs ou ETFs, o cálculo de IR aparece aqui.</div>`;
+    return;
+  }
+  const y = String(new Date().getFullYear());
+  const yearTotal = report.filter(r => r.ym.startsWith(y)).reduce((s, r) => s + r.totalIR, 0);
+  const mn = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  let html = `<div class="ir-summary">
+    <div class="ir-summary-label">DARF estimado em ${y}</div>
+    <div class="ir-summary-value" style="color:${yearTotal > 0 ? 'var(--pink)' : 'var(--cyan)'}">${brl(yearTotal)}</div>
+    <div class="ir-summary-sub">Vencimento: último dia útil do mês seguinte</div>
+  </div>`;
+
+  for (const r of report) {
+    const [yy, mm] = r.ym.split('-');
+    const label = `${mn[Number(mm) - 1]} ${yy}`;
+    html += `<div class="ir-month">
+      <div class="ir-month-head">
+        <div class="ir-month-label">${label}</div>
+        <div class="ir-month-total">${brl(r.totalIR)}</div>
+      </div>`;
+    if (r.acoesSales > 0) {
+      html += `<div class="ir-row"><span class="lbl">Ações · vendas ${brl(r.acoesSales)} ${r.acoesIsento ? '<span class="ir-badge isento">isento</span>' : '<span class="ir-badge due">tributado</span>'}</span><span class="val">${brl(r.acoesIR)}</span></div>`;
+    }
+    if (r.fiisSales > 0) {
+      html += `<div class="ir-row"><span class="lbl">FIIs · vendas ${brl(r.fiisSales)} · lucro ${brl(r.fiisProfit)}</span><span class="val">${brl(r.fiisIR)}</span></div>`;
+    }
+    if (r.etfSales > 0) {
+      html += `<div class="ir-row"><span class="lbl">ETFs · vendas ${brl(r.etfSales)} · lucro ${brl(r.etfProfit)}</span><span class="val">${brl(r.etfIR)}</span></div>`;
+    }
+    if (r.outrosSales > 0) {
+      html += `<div class="ir-row"><span class="lbl">Outros · vendas ${brl(r.outrosSales)}</span><span class="val">${brl(r.outrosIR)}</span></div>`;
+    }
+    html += `</div>`;
+  }
+  container.innerHTML = html;
+}
+
+/* ---------- Importar nota ---------- */
+function parseNotaLine(line) {
+  if (!line) return null;
+  const clean = line.trim();
+  if (!clean) return null;
+
+  // CSV/tab: date, ticker, side, qty, price [, fees]
+  const parts = clean.split(/[,;\t]+/).map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 5) {
+    let date = '', ticker = '', side = '', qty = 0, price = 0, fees = 0;
+    const isoDate = parts.find(p => /^\d{4}-\d{2}-\d{2}$/.test(p));
+    const brDate = parts.find(p => /^\d{2}\/\d{2}\/\d{4}$/.test(p));
+    const tk = parts.find(p => /^[A-Z]{3,6}\d{1,3}$/i.test(p));
+    const sideStr = parts.find(p => /^(compra|venda|c|v|buy|sell)$/i.test(p));
+    if (!tk) return null;
+    ticker = tk.toUpperCase();
+    if (isoDate) date = isoDate;
+    else if (brDate) { const [d, m, y] = brDate.split('/'); date = `${y}-${m}-${d}`; }
+    if (sideStr) {
+      const s = sideStr.toLowerCase();
+      side = (s === 'compra' || s === 'c' || s === 'buy') ? 'buy' : 'sell';
+    }
+    const nums = parts.filter(p => /^\d+([.,]\d+)?$/.test(p)).map(p => parseFloat(p.replace(',', '.')));
+    if (nums.length >= 2) { qty = nums[0]; price = nums[1]; if (nums.length >= 3) fees = nums[2]; }
+    if (!side || !qty || !price) return null;
+    return { ticker, side, qty, price, date: date || today(), fees };
+  }
+
+  // Texto de nota: TICKER C/V qty price [date]
+  const tickerMatch = clean.match(/\b([A-Z]{3,6}\d{1,3})\b/i);
+  if (!tickerMatch) return null;
+  const ticker = tickerMatch[1].toUpperCase();
+  const rest = clean.slice(clean.indexOf(tickerMatch[1]) + tickerMatch[1].length).trim();
+
+  // Detecta lado pelo contexto do texto todo
+  let side = '';
+  if (/\b(compra|aplica[çc][aã]o)\b/i.test(clean)) side = 'buy';
+  else if (/\b(venda|resgate)\b/i.test(clean)) side = 'sell';
+  else {
+    const sm = rest.match(/^\s*(C|V|B|S)\b/i);
+    if (sm) { const c = sm[1].toUpperCase(); side = (c === 'C' || c === 'B') ? 'buy' : 'sell'; }
+  }
+  if (!side) return null;
+
+  const nums = rest.match(/\d+([.,]\d+)?/g);
+  if (!nums || nums.length < 2) return null;
+  const qty = parseFloat(nums[0].replace(',', '.'));
+  const price = parseFloat(nums[1].replace(',', '.'));
+  if (!qty || !price) return null;
+
+  let date = today();
+  const isoMatch = clean.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const brMatch = clean.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (isoMatch) date = `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  else if (brMatch) date = `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+
+  return { ticker, side, qty, price, date, fees: 0 };
+}
+
+let pendingImport = [];
+
+function analyzeNota() {
+  const text = $('notaInput').value || '';
+  const lines = text.split(/\r?\n/);
+  const parsed = [];
+  for (const line of lines) {
+    const r = parseNotaLine(line);
+    if (r) parsed.push(r);
+  }
+  pendingImport = parsed;
+  renderImportPreview();
+}
+
+function renderImportPreview() {
+  const box = $('notaPreview');
+  if (!pendingImport.length) {
+    box.classList.remove('hidden');
+    box.innerHTML = `<div class="import-preview-card">
+      <div class="import-preview-title">Nada reconhecido</div>
+      <div class="import-status">Não consegui identificar negócios nesse texto. Tente um formato por linha: <b>MXRF11 C 10 9,85 2025-01-15</b></div>
+    </div>`;
+    return;
+  }
+  const rows = pendingImport.map((r, i) => {
+    const cat = catalogEntry(r.ticker);
+    const type = cat?.type || 'Outro';
+    const total = r.qty * r.price + (r.fees || 0);
+    return `<div class="import-row">
+      <div class="info">
+        <b>${esc(r.ticker)}</b> <span class="pill" style="margin-left:4px">${esc(type)}</span>
+        <div class="meta">${r.side === 'buy' ? 'Compra' : 'Venda'} · ${qtyToBR(r.qty)} × ${brl(r.price)} · ${esc(r.date)}</div>
+      </div>
+      <div class="amount">${brl(total)}</div>
+      <button type="button" class="delete-btn" onclick="removePendingImport(${i})">×</button>
+    </div>`;
+  }).join('');
+
+  box.classList.remove('hidden');
+  box.innerHTML = `<div class="import-preview-card">
+    <div class="import-preview-title">${pendingImport.length} negócio(s) reconhecido(s)</div>
+    ${rows}
+    <div class="import-actions">
+      <button type="button" class="ghost" onclick="cancelImport()">Cancelar</button>
+      <button type="button" class="primary" onclick="confirmImport()">Importar tudo</button>
+    </div>
+  </div>`;
+}
+
+window.removePendingImport = function (i) {
+  pendingImport.splice(i, 1);
+  renderImportPreview();
+};
+window.cancelImport = function () {
+  pendingImport = [];
+  $('notaPreview').classList.add('hidden');
+  $('notaInput').value = '';
+};
+window.confirmImport = function () {
+  if (!pendingImport.length) return;
+  let added = 0;
+  for (const r of pendingImport) {
+    ensureTickerInCatalog(r.ticker);
+    state.trades.push({ ticker: r.ticker, side: r.side, qty: r.qty, price: r.price, fees: r.fees || 0, date: r.date });
+    if (state.prices[r.ticker] === undefined) state.prices[r.ticker] = r.price;
+    added++;
+  }
+  pendingImport = [];
+  save();
+  $('notaPreview').classList.add('hidden');
+  $('notaInput').value = '';
+  alert(`✅ ${added} operação(ões) importada(s).`);
+  window.showTab('portfolio');
+};
+
+/* ---------- Render principal ---------- */
 function render() {
   const ps = positions();
   const total = ps.reduce((s, p) => s + p.market, 0);
@@ -271,6 +585,7 @@ function render() {
   $('updatedAt').textContent = state.lastUpdated ? ('Cotações ' + timeAgo(state.lastUpdated) + (state.lastSource ? ' · ' + state.lastSource : '')) : '';
   const pel = $('profit'); pel.textContent = (profit > 0 ? '+' : '') + brl(profit); pel.style.color = profit < 0 ? '#ffd0dd' : '#d5f7ff';
   const dt = computeDividendTotals(); $('divMonth').textContent = brl(dt.month); $('divYear').textContent = brl(dt.year);
+  renderEvolution();
   renderAllocation(ps);
 
   $('assets').innerHTML = ps.length ? ps.map(p => {
@@ -279,13 +594,10 @@ function render() {
     const displayName = displayTicker(p.ticker);
     const cdiTag = p.isRF && rfPct(p.ticker) !== 100 ? `<span class="pill pill-cdi">${rfPct(p.ticker)}% CDI</span>` : '';
     if (p.isRF) {
-      const cdiInfo = `CDI ${rfPct(p.ticker)}% · Taxa atual ${state.cdiRate.toFixed(2)}% a.a.`;
+      const cdiInfo = `CDI ${rfPct(p.ticker)}% · Taxa ${state.cdiRate.toFixed(2)}% a.a.`;
       return `<div class="asset">
         <div class="assetTop">
-          <div>
-            <div class="ticker">${esc(displayName)} <span class="pill">${esc(p.type)}</span> ${cdiTag}</div>
-            <div class="small">${esc(p.name)}</div>
-          </div>
+          <div><div class="ticker">${esc(displayName)} <span class="pill">${esc(p.type)}</span> ${cdiTag}</div><div class="small">${esc(p.name)}</div></div>
           <div class="right"><strong>${brl(p.market)}</strong><div class="small">Saldo atual</div></div>
         </div>
         <div class="sub-grid">
@@ -300,17 +612,12 @@ function render() {
           <button type="button" class="ghost-sm" onclick="showTrade('${esc(p.ticker)}')">Operar</button>
           <button type="button" class="ghost-sm" onclick="showProvento('${esc(p.ticker)}')">Provento</button>
         </div>
-        <div class="danger-actions">
-          <button type="button" class="mini-btn remove" onclick="removePosition('${esc(p.ticker)}')">Remover</button>
-        </div>
+        <div class="danger-actions"><button type="button" class="mini-btn remove" onclick="removePosition('${esc(p.ticker)}')">Remover</button></div>
       </div>`;
     }
     return `<div class="asset">
       <div class="assetTop">
-        <div>
-          <div class="ticker">${esc(displayName)} <span class="pill">${esc(p.type)}</span></div>
-          <div class="small">${esc(p.name)} · ${qtyToBR(p.qty)} un.</div>
-        </div>
+        <div><div class="ticker">${esc(displayName)} <span class="pill">${esc(p.type)}</span></div><div class="small">${esc(p.name)} · ${qtyToBR(p.qty)} un.</div></div>
         <div class="right"><strong>${brl(p.market)}</strong><div class="small">Atual ${brl(p.current)}</div></div>
       </div>
       <div class="sub-grid">
@@ -325,18 +632,15 @@ function render() {
         <button type="button" class="ghost-sm" onclick="showTrade('${esc(p.ticker)}')">Operar</button>
         <button type="button" class="ghost-sm" onclick="showProvento('${esc(p.ticker)}')">Provento</button>
       </div>
-      <div class="danger-actions">
-        <button type="button" class="mini-btn remove" onclick="removePosition('${esc(p.ticker)}')">Remover</button>
-      </div>
+      <div class="danger-actions"><button type="button" class="mini-btn remove" onclick="removePosition('${esc(p.ticker)}')">Remover</button></div>
     </div>`;
   }).join('') : '<div class="empty">Nenhuma posição ainda.<br>Toque em <b>Operação</b> para registrar a primeira compra.</div>';
 
-  renderTradeHistory(); renderDivHistory();
+  renderTradeHistory();
+  renderDivHistory();
+  renderIR();
   $('autoRefreshSelect').value = String(state.autoRefresh || 0);
   $('cdiRateInput').value = numToBR(state.cdiRate);
-  const cdiStatus = $('cdiStatus');
-  cdiStatus.textContent = state.cdiLastUpdate ? ('Taxa CDI sincronizada ' + timeAgo(state.cdiLastUpdate)) : 'Taxa CDI manual';
-  cdiStatus.className = 'cdi-status' + (state.cdiLastUpdate ? ' ok' : '');
 }
 
 function renderTradeHistory() {
@@ -390,7 +694,7 @@ function chooseDiv(a, autoAdd) {
 
 window.showTab = function(id) {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x.dataset.tab === id));
-  ['portfolio','trade','dividends','backup'].forEach(t => { const el = $(t); if (el) el.classList.toggle('hidden', t !== id); });
+  ['portfolio','trade','dividends','ir','backup'].forEach(t => { const el = $(t); if (el) el.classList.toggle('hidden', t !== id); });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -415,7 +719,6 @@ window.showTrade = function(ticker) {
   choose(a, false);
   if (isRFComposite(ticker)) $('tradeRFPct').value = String(rfPct(ticker));
 };
-
 window.showProvento = function(ticker) {
   window.showTab('dividends');
   $('divFormBox').classList.remove('hidden');
@@ -423,13 +726,11 @@ window.showProvento = function(ticker) {
   const a = catalogEntry(ticker) || { ticker: base, name: base, type: 'Outro' };
   chooseDiv(a, false);
 };
-
 window.deleteDividend = function(id) {
   if (!confirm('Excluir este provento?')) return;
   state.dividends = state.dividends.filter(d => d.id !== id);
   save();
 };
-
 window.removePosition = function(ticker) {
   const nome = displayTicker(ticker);
   if (!confirm(`Remover "${nome}" completamente?\n\nIsso apaga TODAS as operações, proventos e preços deste ativo. Não tem como desfazer.`)) return;
@@ -487,32 +788,6 @@ async function refreshQuotes() {
   else alert(`❌ Nenhuma cotação encontrada.\nVerifique os tickers: ${failed.join(', ')}`);
 }
 
-async function fetchCDIFromBCB() {
-  const btn = $('fetchCdiBtn'); const status = $('cdiStatus');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Buscando…';
-  status.textContent = 'Consultando BCB (SGS 12)…'; status.className = 'cdi-status';
-  try {
-    const url = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados/ultimos/1?formato=json';
-    const r = await fetch(url);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const j = await r.json();
-    const diaria = Number(j?.[0]?.valor);
-    if (!diaria || diaria <= 0) throw new Error('Valor inválido');
-    const anual = (Math.pow(1 + diaria / 100, 252) - 1) * 100;
-    state.cdiRate = Number(anual.toFixed(2));
-    state.cdiLastUpdate = new Date().toISOString();
-    runRFProjection(true);
-    save();
-    status.textContent = `CDI atualizado: ${state.cdiRate.toFixed(2)}% a.a. · saldos recalculados`;
-    status.className = 'cdi-status ok';
-  } catch (e) {
-    status.textContent = 'Não foi possível buscar do BCB (CORS ou rede). Usando taxa manual.';
-    status.className = 'cdi-status err';
-  } finally {
-    btn.disabled = false; btn.innerHTML = 'Buscar BCB';
-  }
-}
-
 function openMoneyModal(title, defaultValue) {
   return new Promise(resolve => {
     const overlay = $('modalOverlay'), input = $('modalInput');
@@ -541,8 +816,14 @@ function openMoneyModal(title, defaultValue) {
 ['tradePrice','tradeRFValue','fees','divAmount','modalInput','cdiRateInput'].forEach(id => { const el = $(id); if (el) attachMoneyMask(el); });
 
 $('refreshBtn').addEventListener('click', refreshQuotes);
-$('fetchCdiBtn').addEventListener('click', fetchCDIFromBCB);
 $('operation').addEventListener('change', () => { if (!$('tradeRFFields').classList.contains('hidden')) updateRFLabel(); });
+$('notaAnalyzeBtn').addEventListener('click', analyzeNota);
+$('notaExampleBtn').addEventListener('click', () => {
+  $('notaInput').value = `MXRF11 C 10 9,85 ${today()}
+HGLG11 C 5 165,50 ${today()}
+PETR4 C 100 38,20 ${today()}
+VALE3 V 50 62,15 ${today()}`;
+});
 
 $('assetSearch').addEventListener('input', e => {
   const raw = e.target.value.trim(); const q = raw.toLowerCase(); const upper = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -599,7 +880,6 @@ $('tradeForm').addEventListener('submit', e => {
   } else {
     if (state.prices[finalTicker] === undefined) state.prices[finalTicker] = price;
   }
-
   save(); e.target.reset();
   $('tradeDate').value = today(); $('assetSearch').value = ''; $('chosenTicker').value = ''; $('chosenType').value = '';
   $('tradeRFPct').value = '100';
@@ -637,6 +917,16 @@ $('divForm').addEventListener('submit', e => {
 
 $('autoRefreshSelect').addEventListener('change', e => { state.autoRefresh = Number(e.target.value); save(); setupAutoRefresh(); });
 
+$('cdiRateInput').addEventListener('change', () => {
+  const v = parseMoneyBR($('cdiRateInput').value);
+  if (v > 0) {
+    state.cdiRate = v;
+    state.rfLastProjection = null;
+    runRFProjection(true);
+    save();
+  }
+});
+
 let autoRefreshTimer = null;
 function setupAutoRefresh() {
   if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
@@ -659,6 +949,7 @@ $('importFile').addEventListener('change', async e => {
       if (Array.isArray(d.catalog)) state.catalog = d.catalog;
       if (Array.isArray(d.trades)) state.trades = d.trades;
       if (Array.isArray(d.dividends)) state.dividends = d.dividends;
+      if (Array.isArray(d.history)) state.history = d.history;
       if (d.prices && typeof d.prices === 'object') state.prices = d.prices;
       if (d.lastUpdated) state.lastUpdated = d.lastUpdated;
       if (typeof d.cdiRate === 'number') state.cdiRate = d.cdiRate;
@@ -672,20 +963,21 @@ $('diagBtn').addEventListener('click', () => {
   try {
     const raw = localStorage.getItem(KEY) || '(vazio)';
     const parsed = raw !== '(vazio)' ? JSON.parse(raw) : null;
-    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nPreços salvos: ${Object.keys(parsed.prices || {}).length}\nCDI: ${parsed.cdiRate || '—'}%` : '(sem dados)';
+    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nPreços salvos: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%` : '(sem dados)';
     alert('📦 Dados no aparelho:\n\n' + summary + '\n\nTamanho total: ' + raw.length + ' caracteres');
   } catch (e) { alert('Erro ao ler dados: ' + e.message); }
 });
 
 $('clearBtn').addEventListener('click', () => {
   if (confirm('Apagar carteira, operações, proventos e catálogo pessoal deste aparelho?')) {
-    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, cdiLastUpdate: null, rfLastProjection: null };
+    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [] };
     save();
   }
 });
 
 /* ---------- Start ---------- */
 runRFProjection(false);
+recordSnapshot();
 render();
 setupAutoRefresh();
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
