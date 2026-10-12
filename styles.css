@@ -51,7 +51,6 @@ button:active{transform:scale(.97);filter:brightness(.9)}
 input,select{width:100%;padding:13px 14px;background:var(--surface-2);color:var(--text);
   border:1px solid var(--border-strong);border-radius:12px;font:inherit;-webkit-appearance:none;appearance:none}
 input:focus,select:focus{outline:0;border-color:var(--pink);background:var(--surface)}
-input[type="checkbox"]{width:auto;padding:0;accent-color:#ec4899}
 .money-input{font-size:17px !important;font-weight:700 !important;letter-spacing:-.3px}
 label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -70,7 +69,6 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .danger-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 .mini-btn{background:transparent;border:1px solid;font-size:11px;font-weight:700;padding:6px 12px;border-radius:10px}
-.mini-btn.zero{color:#fbbf24;border-color:rgba(251,191,36,.3)}
 .mini-btn.remove{color:var(--danger);border-color:rgba(255,77,128,.3)}
 .sub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
 .sub-label{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:700}
