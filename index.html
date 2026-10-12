@@ -8,137 +8,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="enyao">
-<title>enyao | Carteira de investimentos</title>
+<title>enyao | Carteira</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="manifest" href="manifest.json">
-<style>
-:root{
-  --bg:#050508;--surface:#0e0e14;--surface-2:#16161e;
-  --border:rgba(255,255,255,.06);--border-strong:rgba(255,255,255,.1);
-  --pink:#ec4899;--cyan:#22d3ee;--purple:#a855f7;
-  --text:#ffffff;--muted:#8a8a9c;
-  --gradient:linear-gradient(135deg,#ec4899 0%,#a855f7 45%,#22d3ee 100%);
-  --gradient-div:linear-gradient(135deg,#22d3ee 0%,#a855f7 100%);
-  --success:#22d3ee;--danger:#ff4d80;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0}
-body{
-  background:var(--bg);color:var(--text);
-  font:15px -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
-  min-height:100vh;padding-bottom:110px;
-  -webkit-font-smoothing:antialiased;overscroll-behavior-y:none;
-}
-header{padding:24px 18px 0;max-width:600px;margin:0 auto}
-.brand{font-size:26px;font-weight:800;letter-spacing:-.8px;
-  background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}
-.hero{margin-top:16px;background:var(--gradient);border-radius:22px;padding:22px;position:relative;overflow:hidden;
-  box-shadow:0 24px 48px -24px rgba(236,72,153,.5),0 16px 40px -20px rgba(34,211,238,.35)}
-.hero::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 90% 0%,rgba(255,255,255,.25),transparent 55%)}
-.hero-label{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:700;
-  color:rgba(255,255,255,.72);position:relative;z-index:1}
-.hero-total-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:6px 0 4px;position:relative;z-index:1}
-.hero-total{font-size:34px;font-weight:800;letter-spacing:-1.2px}
-.hero-badge{display:inline-flex;align-items:center;gap:3px;
-  background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.18);
-  border-radius:99px;padding:4px 10px;font-size:12px;font-weight:800;letter-spacing:-.2px}
-.hero-badge.pos{color:#d5f7ff}
-.hero-badge.neg{color:#ffd0dd}
-.hero-updated{font-size:10px;color:rgba(255,255,255,.72);position:relative;z-index:1;margin-bottom:14px;min-height:12px}
-.hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:1}
-.hero-stat{background:rgba(0,0,0,.28);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:11px 13px}
-.hero-stat-label{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,.7)}
-.hero-stat-value{font-size:17px;font-weight:700;margin-top:4px;letter-spacing:-.3px}
-.div-hero{margin-top:12px;background:var(--gradient-div);border-radius:22px;padding:18px;position:relative;overflow:hidden;
-  box-shadow:0 24px 48px -24px rgba(34,211,238,.5),0 16px 40px -20px rgba(168,85,247,.35)}
-.div-hero::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 10% 100%,rgba(255,255,255,.2),transparent 55%)}
-.div-hero-label{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:700;
-  color:rgba(255,255,255,.78);position:relative;z-index:1}
-.div-hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;position:relative;z-index:1}
-.div-stat{background:rgba(0,0,0,.28);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:11px 13px}
-.div-stat-label{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,.7)}
-.div-stat-value{font-size:17px;font-weight:700;margin-top:4px;letter-spacing:-.3px}
-main{padding:22px 18px 0;max-width:600px;margin:0 auto}
-.section{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px}
-.section h2{font-size:16px;font-weight:700;margin:0 0 14px;letter-spacing:-.3px}
-button{border:0;border-radius:14px;font:inherit;cursor:pointer;transition:transform .08s,filter .2s;-webkit-user-select:none;user-select:none}
-button:active{transform:scale(.97);filter:brightness(.9)}
-.primary{background:var(--gradient);color:#fff;font-weight:700;font-size:15px;padding:15px 16px;width:100%;
-  box-shadow:0 12px 28px -12px rgba(236,72,153,.55)}
-.primary-div{background:var(--gradient-div);color:#fff;font-weight:700;font-size:15px;padding:15px 16px;width:100%;
-  box-shadow:0 12px 28px -12px rgba(34,211,238,.55)}
-.ghost{background:var(--surface-2);color:var(--text);font-weight:600;border:1px solid var(--border-strong);padding:11px 14px;font-size:13px}
-.ghost-sm{background:var(--surface-2);color:var(--text);font-weight:600;border:1px solid var(--border-strong);padding:8px 11px;font-size:12px}
-.danger{background:rgba(255,77,128,.08);color:var(--danger);border:1px solid rgba(255,77,128,.22);font-weight:600;padding:13px;width:100%}
-input,select{width:100%;padding:13px 14px;background:var(--surface-2);color:var(--text);
-  border:1px solid var(--border-strong);border-radius:12px;font:inherit;transition:border-color .15s,background .15s;
-  -webkit-appearance:none;appearance:none}
-input:focus,select:focus{outline:0;border-color:var(--pink);background:var(--surface)}
-label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hidden{display:none !important}
-.empty{padding:22px 6px;text-align:center;color:var(--muted);font-size:13px}
-.asset{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}
-.asset:last-child{margin-bottom:0}
-.assetTop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.ticker{font-weight:800;font-size:16px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.pill{font-size:9px;font-weight:700;letter-spacing:.6px;background:var(--gradient);color:#fff;padding:3px 8px;border-radius:99px;text-transform:uppercase}
-.pill-div{background:var(--gradient-div)}
-.pill-new{background:linear-gradient(135deg,#22c55e,#16a34a)}
-.small{font-size:11.5px;color:var(--muted);margin-top:3px}
-.right{text-align:right}
-.right strong{font-size:16px;letter-spacing:-.3px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.sub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
-.sub-label{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:700}
-.sub-value{font-size:15px;font-weight:700;margin-top:3px}
-.yoc-line{margin-top:10px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-.yoc-line b{color:var(--cyan);font-weight:800;font-size:13px}
-.notice{font-size:11.5px;line-height:1.55;color:var(--muted);margin:10px 0 0}
-.warn{font-size:11px;line-height:1.55;color:#ffb4a9;background:rgba(255,77,128,.08);border:1px solid rgba(255,77,128,.18);
-  padding:10px 12px;border-radius:10px;margin:10px 0 0}
-.suggestion{width:100%;display:flex;justify-content:space-between;gap:10px;text-align:left;background:transparent;color:var(--text);
-  border-bottom:1px solid var(--border);border-radius:0;padding:12px 14px}
-.suggestion:last-child{border-bottom:0}
-.suggestion:active{background:var(--surface-2)}
-.suggestion.new{background:linear-gradient(135deg,rgba(34,197,94,.10),rgba(22,163,74,.05))}
-.searchResults{background:var(--surface);border:1px solid var(--border-strong);border-radius:12px;margin-top:8px;max-height:240px;overflow:auto}
-.result-box{background:linear-gradient(135deg,rgba(236,72,153,.12),rgba(34,211,238,.12));
-  border:1px solid rgba(236,72,153,.25);border-radius:14px;padding:14px;margin-top:12px}
-.result-box strong{font-size:16px;letter-spacing:-.3px}
-.div-card{background:linear-gradient(135deg,rgba(34,211,238,.10),rgba(168,85,247,.10));
-  border:1px solid rgba(34,211,238,.22);border-radius:14px;padding:14px;margin-bottom:10px}
-.div-card:last-child{margin-bottom:0}
-.div-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.div-amount{font-size:16px;font-weight:800;color:var(--cyan);letter-spacing:-.3px}
-.div-meta{font-size:11.5px;color:var(--muted);margin-top:3px}
-.div-type{font-size:9px;font-weight:700;letter-spacing:.6px;padding:3px 8px;border-radius:99px;background:rgba(34,211,238,.15);color:var(--cyan);text-transform:uppercase}
-.tabs{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(5,5,8,.9);
-  backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
-  border-top:1px solid var(--border);padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
-.tabs-inner{display:flex;width:100%;max-width:600px;margin:0 auto;gap:4px}
-.tabs button{flex:1;background:none;color:var(--muted);font-size:10px;font-weight:600;padding:10px 4px;
-  display:flex;flex-direction:column;align-items:center;gap:5px;border-radius:12px;letter-spacing:.2px;
-  min-height:56px;touch-action:manipulation}
-.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:filter .2s;pointer-events:none}
-.tabs button span{pointer-events:none;color:inherit}
-.tabs button.active{color:var(--pink)}
-.tabs button.active svg{stroke:var(--pink);filter:drop-shadow(0 0 10px rgba(236,72,153,.7))}
-.tabs button.active[data-tab="dividends"]{color:var(--cyan)}
-.tabs button.active[data-tab="dividends"] svg{stroke:var(--cyan);filter:drop-shadow(0 0 10px rgba(34,211,238,.7))}
-.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle}
-@keyframes spin{to{transform:rotate(360deg)}}
-.delete-btn{background:transparent;color:var(--danger);border:0;font-size:11px;font-weight:600;padding:6px 8px;opacity:.7}
-.delete-btn:active{opacity:1}
-.month-group{margin-bottom:14px}
-.month-label{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
-.month-total{color:var(--cyan)}
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header>
@@ -151,123 +25,96 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
     </div>
     <div class="hero-updated" id="updatedAt"></div>
     <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="hero-stat-label">Posições</div>
-        <div class="hero-stat-value" id="count">0</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-label">Resultado</div>
-        <div class="hero-stat-value" id="profit">R$ 0,00</div>
-      </div>
+      <div class="hero-stat"><div class="hero-stat-label">Posições</div><div class="hero-stat-value" id="count">0</div></div>
+      <div class="hero-stat"><div class="hero-stat-label">Resultado</div><div class="hero-stat-value" id="profit">R$ 0,00</div></div>
     </div>
   </div>
   <div class="div-hero">
     <div class="div-hero-label">Proventos recebidos</div>
     <div class="div-hero-stats">
-      <div class="div-stat">
-        <div class="div-stat-label">Este mês</div>
-        <div class="div-stat-value" id="divMonth">R$ 0,00</div>
-      </div>
-      <div class="div-stat">
-        <div class="div-stat-label">Este ano</div>
-        <div class="div-stat-value" id="divYear">R$ 0,00</div>
-      </div>
+      <div class="div-stat"><div class="div-stat-label">Este mês</div><div class="div-stat-value" id="divMonth">R$ 0,00</div></div>
+      <div class="div-stat"><div class="div-stat-label">Este ano</div><div class="div-stat-value" id="divYear">R$ 0,00</div></div>
     </div>
   </div>
 </header>
-
 <main>
-<section class="section" id="portfolio">
-  <h2>Minha carteira</h2>
-  <button type="button" class="ghost" id="refreshBtn" style="width:100%;margin-bottom:12px">🔄 Atualizar cotações agora</button>
-  <div id="assets"></div>
-</section>
-
-<section class="section hidden" id="trade">
-  <h2>Registrar operação</h2>
-  <label for="assetSearch">Ativo</label>
-  <input id="assetSearch" placeholder="Ticker ou nome… Ex.: MXRF11" autocomplete="off">
-  <div id="suggestions" class="searchResults hidden"></div>
-  <div id="selectedBox" class="result-box hidden">
-    <strong id="selectedTicker"></strong>
-    <div class="small" id="selectedName"></div>
-    <div class="small" id="selectedType"></div>
-  </div>
-  <form id="tradeForm">
-    <input type="hidden" id="chosenTicker">
-    <label for="operation">Operação</label>
-    <select id="operation"><option value="buy">Compra</option><option value="sell">Venda</option></select>
-    <div class="grid">
-      <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="number" min="0.0001" step="any" required placeholder="10"></div>
-      <div><label for="tradePrice">Preço unit. (R$)</label><input id="tradePrice" type="number" min="0.0001" step="any" required placeholder="6,99"></div>
+  <section class="section" id="portfolio">
+    <h2>Minha carteira</h2>
+    <button type="button" class="ghost" id="refreshBtn" style="width:100%;margin-bottom:12px">🔄 Atualizar cotações agora</button>
+    <div id="assets"></div>
+  </section>
+  <section class="section hidden" id="trade">
+    <h2>Registrar operação</h2>
+    <label for="assetSearch">Ativo</label>
+    <input id="assetSearch" placeholder="Ticker ou nome…" autocomplete="off">
+    <div id="suggestions" class="searchResults hidden"></div>
+    <div id="selectedBox" class="result-box hidden">
+      <strong id="selectedTicker"></strong>
+      <div class="small" id="selectedName"></div>
+      <div class="small" id="selectedType"></div>
     </div>
-    <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
-    <label for="fees">Custos (R$)</label><input id="fees" type="number" min="0" step="0.01" value="0">
-    <button type="submit" class="primary" style="margin-top:18px">Salvar operação</button>
-  </form>
-  <h2 style="margin-top:24px">Histórico de operações</h2>
-  <div id="tradeHistory"></div>
-</section>
-
-<section class="section hidden" id="dividends">
-  <h2>Proventos</h2>
-  <button type="button" class="primary-div" id="toggleDivForm">+ Registrar provento</button>
-  <div id="divFormBox" class="hidden" style="margin-top:14px">
-    <label for="divTickerSearch">Ativo</label>
-    <input id="divTickerSearch" placeholder="Ticker… Ex.: MXRF11" autocomplete="off">
-    <div id="divSuggestions" class="searchResults hidden"></div>
-    <div id="divSelectedBox" class="result-box hidden" style="background:linear-gradient(135deg,rgba(34,211,238,.12),rgba(168,85,247,.12));border-color:rgba(34,211,238,.3)">
-      <strong id="divSelectedTicker"></strong>
-      <div class="small" id="divSelectedName"></div>
-    </div>
-    <form id="divForm">
-      <input type="hidden" id="divChosenTicker">
+    <form id="tradeForm">
+      <input type="hidden" id="chosenTicker">
+      <label for="operation">Operação</label>
+      <select id="operation"><option value="buy">Compra</option><option value="sell">Venda</option></select>
       <div class="grid">
-        <div><label for="divAmount">Valor (R$)</label><input id="divAmount" type="number" min="0.01" step="0.01" required placeholder="12,50"></div>
-        <div><label for="divDate">Data</label><input id="divDate" type="date" required></div>
+        <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="number" min="0.0001" step="any" required placeholder="10"></div>
+        <div><label for="tradePrice">Preço unit. (R$)</label><input id="tradePrice" type="number" min="0.0001" step="any" required placeholder="6,99"></div>
       </div>
-      <label for="divKind">Tipo</label>
-      <select id="divKind">
-        <option value="Dividendo">Dividendo</option>
-        <option value="JCP">JCP</option>
-        <option value="Rendimento">Rendimento</option>
-        <option value="Outro">Outro</option>
-      </select>
-      <button type="submit" class="primary-div" style="margin-top:16px">Salvar provento</button>
+      <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
+      <label for="fees">Custos (R$)</label><input id="fees" type="number" min="0" step="0.01" value="0">
+      <button type="submit" class="primary" style="margin-top:18px">Salvar operação</button>
     </form>
-  </div>
-  <h2 style="margin-top:24px">Histórico de proventos</h2>
-  <div id="divHistory"></div>
-</section>
-
-<section class="section hidden" id="backup">
-  <h2>Ajustes</h2>
-  <label for="apiKeyInput">Chave da API brapi.dev</label>
-  <input id="apiKeyInput" type="password" placeholder="Usando chave padrão do app">
-  <p class="notice">O app já vem com uma chave padrão configurada. Você só precisa mexer aqui se quiser <b>usar a sua própria chave</b> (por exemplo, se a chave padrão parar de funcionar ou estourar o limite).</p>
-  <button id="saveApiKey" class="primary" style="margin-top:12px">Salvar minha chave</button>
-  <button id="removeApiKey" class="danger" style="margin-top:10px">Voltar para a chave padrão do app</button>
-
-  <label style="margin-top:24px">Auto-atualização</label>
-  <select id="autoRefreshSelect">
-    <option value="0">Desativada</option>
-    <option value="5">A cada 5 minutos</option>
-    <option value="15">A cada 15 minutos</option>
-    <option value="30">A cada 30 minutos</option>
-  </select>
-
-  <h2 style="margin-top:28px">Backup e dados</h2>
-  <button id="exportBtn" class="primary">Exportar backup (JSON)</button>
-  <label for="importFile" style="margin-top:16px">Importar backup</label>
-  <input type="file" id="importFile" accept=".json,application/json">
-  <button id="clearBtn" class="danger" style="margin-top:18px">Apagar todos os dados</button>
-
-  <div class="warn" style="margin-top:20px">
-    <b>Aviso para quem publica:</b> esta chave fica visível no código-fonte público do GitHub Pages. Para uso pessoal com amigos próximos, ok. Para escalar com segurança, é preciso um servidor (proxy) que esconda a chave.
-  </div>
-</section>
+    <h2 style="margin-top:24px">Histórico de operações</h2>
+    <div id="tradeHistory"></div>
+  </section>
+  <section class="section hidden" id="dividends">
+    <h2>Proventos</h2>
+    <button type="button" class="primary-div" id="toggleDivForm">+ Registrar provento</button>
+    <div id="divFormBox" class="hidden" style="margin-top:14px">
+      <label for="divTickerSearch">Ativo</label>
+      <input id="divTickerSearch" placeholder="Ticker…" autocomplete="off">
+      <div id="divSuggestions" class="searchResults hidden"></div>
+      <div id="divSelectedBox" class="result-box hidden">
+        <strong id="divSelectedTicker"></strong>
+        <div class="small" id="divSelectedName"></div>
+      </div>
+      <form id="divForm">
+        <input type="hidden" id="divChosenTicker">
+        <div class="grid">
+          <div><label for="divAmount">Valor (R$)</label><input id="divAmount" type="number" min="0.01" step="0.01" required placeholder="12,50"></div>
+          <div><label for="divDate">Data</label><input id="divDate" type="date" required></div>
+        </div>
+        <label for="divKind">Tipo</label>
+        <select id="divKind"><option>Dividendo</option><option>JCP</option><option>Rendimento</option><option>Outro</option></select>
+        <button type="submit" class="primary-div" style="margin-top:16px">Salvar provento</button>
+      </form>
+    </div>
+    <h2 style="margin-top:24px">Histórico</h2>
+    <div id="divHistory"></div>
+  </section>
+  <section class="section hidden" id="backup">
+    <h2>Ajustes</h2>
+    <label for="apiKeyInput">Chave da API brapi.dev</label>
+    <input id="apiKeyInput" type="password" placeholder="Usando chave padrão do app">
+    <p class="notice">O app já vem com uma chave configurada. Você só mexe aqui se quiser usar a sua própria.</p>
+    <button id="saveApiKey" class="primary" style="margin-top:12px">Salvar minha chave</button>
+    <button id="removeApiKey" class="danger" style="margin-top:10px">Voltar para a chave padrão</button>
+    <label style="margin-top:24px">Auto-atualização</label>
+    <select id="autoRefreshSelect">
+      <option value="0">Desativada</option><option value="5">5 minutos</option>
+      <option value="15">15 minutos</option><option value="30">30 minutos</option>
+    </select>
+    <h2 style="margin-top:28px">Backup</h2>
+    <button id="exportBtn" class="primary">Exportar backup</button>
+    <label for="importFile" style="margin-top:16px">Importar backup</label>
+    <input type="file" id="importFile" accept=".json,application/json">
+    <h2 style="margin-top:28px">Diagnóstico</h2>
+    <button id="diagBtn" class="ghost" style="width:100%">Ver dados salvos</button>
+    <button id="clearBtn" class="danger" style="margin-top:18px">Apagar todos os dados</button>
+    <div class="warn" style="margin-top:20px"><b>Aviso:</b> a chave padrão fica visível no código público. Para uso com amigos próximos, ok. Para escalar, o ideal é um servidor (proxy).</div>
+  </section>
 </main>
-
 <nav class="tabs"><div class="tabs-inner">
   <button type="button" class="active" data-tab="portfolio" onclick="showTab('portfolio')">
     <svg viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7"/></svg>
@@ -286,16 +133,6 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
     <span>Ajustes</span>
   </button>
 </div></nav>
-
-<script>
-/* =========================================================
-   ⚙️ CONFIGURAÇÃO — COLE SUA CHAVE BRAPI AQUI ENTRE AS ASPAS
-   Ex.: const DEFAULT_API_KEY = 'abc123xyz456';
-   ========================================================= */
-const DEFAULT_API_KEY = 'n2jSRHKNBe1nYrLza56x6n';
-/* ========================================================= */
-
-const KEY='enyao-v02';
-const baseCatalog=[
-['MXRF11','Maxi Renda','FII'],['HGLG11','CSHG Logística','FII'],['VISC11','Vinci Shopping Centers','FII'],['XPML11','XP Malls','FII'],['KNRI11','Kinea Renda Imobiliária','FII'],['GARE11','Guardian Real Estate','FII'],['TRXF11','TRX Real Estate','FII'],['RECR11','FII REC Recebíveis Imobiliários','FII'],['LIFE11','Life Capital Partners','FII'],['XPCA11','XP Crédito Agrícola','FII'],['FGAA11','FG Agro','FII'],['AAZQ11','AZ Quest Sole','FII'],['IRIM11','Iridium Recebíveis Imobiliários','FII'],['KNCR11','Kinea Crédito Imobiliário','FII'],['KNIP11','Kinea Índices de Preços','FII'],['HGRU11','CSHG Renda Urbana','FII'],['XPLG11','XP Log','FII'],['BRCO11','Bresco Logística','FII'],['BTLG11','BTG Logística','FII'],['VILG11','Vinci Logística','FII'],['JSRE11','JS Real Estate','FII'],['RBRF11','RBR Alpha','FII'],['CPTS11','Capitânia Securities','FII'],['DEVA11','Devant Recebíveis','FII'],
-['ITSA4','Itaúsa PN','Ação'],['ITUB4','Itaú Unibanco PN','Ação'],['PETR4','Petrobras PN','Ação'],['PETR3','Petrobras ON','Ação'],['VALE3','Vale ON','Ação'],['BBAS3','Banco do Brasil ON','Ação'],['WEGE3','WEG ON','Ação'],['BBDC4','Bradesco PN','Ação'],['BBDC3','Bradesco ON','Ação'],['ABEV3','Ambev ON','Ação'],['B3SA3','B3 ON','Ação'],['EGIE3','Engie Brasil ON','Ação'],['TAEE11','Taesa units','Ação'],['OPC
+<script src="app.js"></script>
+</body>
+</html>
