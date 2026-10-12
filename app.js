@@ -865,4 +865,272 @@ window.openRedeem = function(ticker) {
   $('redeemInfo').innerHTML = `Valor aplicado: <b>${brl(p.cost)}</b><br>Saldo atual projetado: <b>${brl(p.market)}</b>`;
   $('redeemValue').value = numToBR(p.market);
   $('redeemDate').value = today();
-  modal.classList
+  modal.classList.remove('hidden');
+};
+
+$('redeemCancel').addEventListener('click', () => $('redeemModal').classList.add('hidden'));
+$('redeemModal').addEventListener('click', e => { if (e.target === $('redeemModal')) $('redeemModal').classList.add('hidden'); });
+
+$('redeemConfirm').addEventListener('click', () => {
+  const modal = $('redeemModal');
+  const ticker = modal.dataset.ticker;
+  const value = parseMoneyBR($('redeemValue').value);
+  const date = $('redeemDate').value || today();
+  if (!ticker) { alert('Ticker não identificado.'); return; }
+  if (!value || value <= 0) { alert('Informe um valor válido.'); return; }
+  const p = positions().find(x => x.ticker === ticker);
+  if (!p) { alert('Posição não encontrada.'); return; }
+  if (value > p.cost + 1e-6) { alert(`Valor maior que o aplicado (${brl(p.cost)}).`); return; }
+  const pctCDI = rfPct(ticker);
+  state.trades.push({ ticker, side: 'sell', qty: 1, price: value, fees: 0, date, pctCDI });
+  state.rfLastProjection = null;
+  runRFProjection(true);
+  save();
+  modal.classList.add('hidden');
+  alert(`✅ Resgate de ${brl(value)} registrado.`);
+});
+
+/* ---------- Modal genérico de valor ---------- */
+function openMoneyModal(title, defaultValue) {
+  return new Promise(resolve => {
+    const overlay = $('modalOverlay'), input = $('modalInput');
+    $('modalTitle').textContent = title;
+    input.value = defaultValue ? digitsToMoney(String(defaultValue).replace(/\D/g, '')) : '';
+    overlay.classList.remove('hidden');
+    setTimeout(() => { input.focus(); const l = input.value.length; input.setSelectionRange(l, l); }, 60);
+    function cleanup() {
+      overlay.classList.add('hidden');
+      $('modalConfirm').removeEventListener('click', onConfirm);
+      $('modalCancel').removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onOverlay);
+      input.removeEventListener('keydown', onKey);
+    }
+    function onConfirm() { const v = input.value; cleanup(); resolve(v); }
+    function onCancel() { cleanup(); resolve(null); }
+    function onOverlay(e) { if (e.target === overlay) onCancel(); }
+    function onKey(e) { if (e.key === 'Enter') { e.preventDefault(); onConfirm(); } if (e.key === 'Escape') onCancel(); }
+    $('modalConfirm').addEventListener('click', onConfirm);
+    $('modalCancel').addEventListener('click', onCancel);
+    overlay.addEventListener('click', onOverlay);
+    input.addEventListener('keydown', onKey);
+  });
+}
+
+/* ---------- Eventos ---------- */
+['tradePrice','tradeRFValue','fees','divAmount','modalInput','cdiRateInput','sellPrice','sellFees','redeemValue'].forEach(id => { const el = $(id); if (el) attachMoneyMask(el); });
+
+$('refreshBtn').addEventListener('click', refreshQuotes);
+$('notaAnalyzeBtn').addEventListener('click', () => {
+  analyzeNotaText($('notaInput').value || '');
+});
+$('notaExampleBtn').addEventListener('click', () => {
+  $('notaInput').value = `MXRF11 C 10 9,85 ${today()}
+HGLG11 C 5 165,50 ${today()}
+PETR4 C 100 38,20 ${today()}
+VALE3 V 50 62,15 ${today()}`;
+});
+$('notaPdf').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (f) await handlePDFUpload(f);
+});
+
+$('assetSearch').addEventListener('input', e => {
+  const raw = e.target.value.trim(); const q = raw.toLowerCase(); const upper = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const exact = catalog().find(a => a.ticker === upper);
+  if (exact && /^[a-zA-Z0-9]{2,}$/.test(raw)) toggleRFFields(exact.type === 'Renda fixa' || isRFTicker(exact.ticker));
+  else if (!exact) toggleRFFields(false);
+  const matches = catalog().filter(a => (a.ticker + ' ' + a.name).toLowerCase().includes(q)).slice(0, 10);
+  const box = $('suggestions'); let html = '';
+  const exactInMatches = matches.some(a => a.ticker === upper);
+  if (upper && !exactInMatches && upper.length >= 3) { html += `<button type="button" class="suggestion new" data-new="1"><span><strong>+ Usar "${esc(upper)}"</strong><br><small style="color:var(--muted)">Ticker novo — salvo automaticamente</small></span><span class="pill pill-new">Novo</span></button>`; }
+  html += matches.map((a, i) => `<button type="button" class="suggestion" data-index="${i}"><span><strong>${esc(a.ticker)}</strong><br><small style="color:var(--muted)">${esc(a.name)}</small></span><span class="pill">${esc(a.type)}</span></button>`).join('');
+  box.innerHTML = html; box.classList.toggle('hidden', !q && !upper);
+  const nb = box.querySelector('button[data-new]'); if (nb) nb.addEventListener('click', () => choose({ ticker: upper, name: upper, type: isRFTicker(upper) ? 'Renda fixa' : 'Outro' }, true));
+  box.querySelectorAll('button[data-index]').forEach(b => b.addEventListener('click', () => choose(matches[Number(b.dataset.index)], false)));
+  $('chosenTicker').value = ''; $('chosenType').value = ''; $('selectedBox').classList.add('hidden');
+});
+
+$('tradeDate').value = today();
+
+$('tradeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  let ticker = ($('chosenTicker').value || '').trim();
+  if (!ticker) {
+    // Fallback: extrai apenas a parte do ticker antes de " — " se existir
+    const raw = $('assetSearch').value.trim();
+    const beforeDash = raw.split('—')[0].trim();
+    const candidate = beforeDash.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (candidate.length >= 3 && candidate.length <= 10) ticker = candidate;
+  }
+  if (!ticker) { alert('Escolha um ativo da lista.'); return; }
+  const entry = catalogEntry(ticker);
+  const isRF = (entry?.type === 'Renda fixa') || isRFTicker(ticker) || isRFComposite(ticker);
+  const fees = parseMoneyBR($('fees').value);
+  let qty, price, pctCDI = 100, finalTicker = ticker;
+  if (isRF) {
+    const value = parseMoneyBR($('tradeRFValue').value);
+    if (value <= 0) { alert('Informe um valor válido em "Valor aplicado".'); return; }
+    pctCDI = parseNum($('tradeRFPct').value) || 100;
+    finalTicker = buildRFTicker(rfBase(ticker), pctCDI);
+    qty = 1; price = value;
+  } else {
+    qty = parseNum($('tradeQty').value); price = parseMoneyBR($('tradePrice').value);
+    if (qty <= 0 || price <= 0) { alert('Informe quantidade e preço válidos.'); return; }
+  }
+  ensureTickerInCatalog(finalTicker);
+  const trade = { ticker: finalTicker, side: 'buy', qty, price, fees, date: $('tradeDate').value || today() };
+  if (isRF) trade.pctCDI = pctCDI;
+  state.trades.push(trade);
+  if (isRF) {
+    state.rfLastProjection = null;
+    runRFProjection(true);
+  } else {
+    if (state.prices[finalTicker] === undefined) state.prices[finalTicker] = price;
+  }
+  save(); e.target.reset();
+  $('tradeDate').value = today(); $('assetSearch').value = ''; $('chosenTicker').value = ''; $('chosenType').value = '';
+  $('tradeRFPct').value = '100';
+  $('selectedBox').classList.add('hidden'); toggleRFFields(false); window.showTab('portfolio');
+});
+
+$('toggleDivForm').addEventListener('click', () => { const box = $('divFormBox'); box.classList.toggle('hidden'); if (!box.classList.contains('hidden')) $('divDate').value = today(); });
+$('divDate').value = today();
+
+$('divTickerSearch').addEventListener('input', e => {
+  const raw = e.target.value.trim(); const q = raw.toLowerCase();
+  const matches = catalog().filter(a => (a.ticker + ' ' + a.name).toLowerCase().includes(q)).slice(0, 10);
+  const box = $('divSuggestions'); let html = '';
+  const upper = raw.toUpperCase().replace(/[^A-Z0-9]/g, ''); const exact = matches.some(a => a.ticker === upper);
+  if (upper && !exact && upper.length >= 3) { html += `<button type="button" class="suggestion new" data-new="1"><span><strong>+ Usar "${esc(upper)}"</strong><br><small style="color:var(--muted)">Ticker novo — salvo automaticamente</small></span><span class="pill pill-new">Novo</span></button>`; }
+  html += matches.map((a, i) => `<button type="button" class="suggestion" data-index="${i}"><span><strong>${esc(a.ticker)}</strong><br><small style="color:var(--muted)">${esc(a.name)}</small></span><span class="pill pill-div">${esc(a.type)}</span></button>`).join('');
+  box.innerHTML = html; box.classList.toggle('hidden', !q && !upper);
+  const nb = box.querySelector('button[data-new]'); if (nb) nb.addEventListener('click', () => chooseDiv({ ticker: upper, name: upper, type: isRFTicker(upper) ? 'Renda fixa' : 'Outro' }, true));
+  box.querySelectorAll('button[data-index]').forEach(b => b.addEventListener('click', () => chooseDiv(matches[Number(b.dataset.index)], false)));
+  $('divChosenTicker').value = ''; $('divSelectedBox').classList.add('hidden');
+});
+
+$('divForm').addEventListener('submit', e => {
+  e.preventDefault();
+  let ticker = $('divChosenTicker').value;
+  if (!ticker) { const raw = $('divTickerSearch').value.trim().split('—')[0].trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); if (raw && raw.length >= 3) ticker = raw; }
+  const amount = parseMoneyBR($('divAmount').value), date = $('divDate').value || today(), kind = $('divKind').value;
+  if (!ticker || amount <= 0) { alert('Escolha um ativo e informe um valor válido.'); return; }
+  ensureTickerInCatalog(ticker);
+  state.dividends.push({ id: Date.now() + Math.floor(Math.random() * 1000), ticker, amount, date, kind });
+  save(); e.target.reset();
+  $('divChosenTicker').value = ''; $('divTickerSearch').value = ''; $('divSelectedBox').classList.add('hidden');
+  $('divDate').value = today(); $('divFormBox').classList.add('hidden');
+});
+
+$('autoRefreshSelect').addEventListener('change', e => { state.autoRefresh = Number(e.target.value); save(); setupAutoRefresh(); });
+$('cdiRateInput').addEventListener('change', () => {
+  const v = parseMoneyBR($('cdiRateInput').value);
+  if (v > 0) {
+    state.cdiRate = v;
+    state.rfLastProjection = null;
+    runRFProjection(true);
+    save();
+  }
+});
+
+let autoRefreshTimer = null;
+function setupAutoRefresh() {
+  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+  const min = Number(state.autoRefresh || 0);
+  if (min > 0) { autoRefreshTimer = setInterval(() => { if (document.visibilityState === 'visible') refreshQuotes().catch(() => {}); }, min * 60 * 1000); }
+}
+
+$('exportBtn').addEventListener('click', () => {
+  const exportState = { ...state, apiKey: undefined };
+  const blob = new Blob([JSON.stringify(exportState, null, 2)], { type: 'application/json' });
+  const u = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = u; a.download = 'enyao-backup.json'; a.click(); URL.revokeObjectURL(u);
+});
+
+$('importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (d.trades && Array.isArray(d.trades)) {
+      if (Array.isArray(d.catalog)) state.catalog = d.catalog;
+      if (Array.isArray(d.trades)) state.trades = d.trades;
+      if (Array.isArray(d.dividends)) state.dividends = d.dividends;
+      if (Array.isArray(d.history)) state.history = d.history;
+      if (d.prices && typeof d.prices === 'object') state.prices = d.prices;
+      if (d.lastUpdated) state.lastUpdated = d.lastUpdated;
+      if (typeof d.cdiRate === 'number') state.cdiRate = d.cdiRate;
+      save(); alert('Backup importado.');
+    } else alert('Formato não reconhecido.');
+  } catch (err) { alert('Não foi possível ler esse arquivo JSON.'); }
+  e.target.value = '';
+});
+
+$('diagBtn').addEventListener('click', () => {
+  try {
+    const raw = localStorage.getItem(KEY) || '(vazio)';
+    const parsed = raw !== '(vazio)' ? JSON.parse(raw) : null;
+    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nPreços salvos: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%` : '(sem dados)';
+    alert('📦 Dados no aparelho:\n\n' + summary + '\n\nTamanho total: ' + raw.length + ' caracteres');
+  } catch (e) { alert('Erro ao ler dados: ' + e.message); }
+});
+
+$('clearBtn').addEventListener('click', () => {
+  if (confirm('Apagar carteira, operações, proventos e catálogo pessoal deste aparelho?')) {
+    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [] };
+    save();
+  }
+});
+
+async function refreshQuotes() {
+  const btn = $('refreshBtn');
+  const ps = positions();
+  if (!ps.length) { alert('Sem posições para atualizar.'); return; }
+  const tickers = ps.filter(p => !p.isRF).map(p => p.ticker);
+  if (!tickers.length) { alert('Só há renda fixa. A projeção automática cuida dos saldos.'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Buscando cotações…';
+  let updated = 0, failed = [], sourceUsed = '';
+  for (const tk of tickers) {
+    const r = await fetchPrice(tk);
+    if (r && r.price > 0) { state.prices[tk] = r.price; updated++; sourceUsed = r.source; }
+    else failed.push(tk);
+  }
+  if (updated) { state.lastUpdated = new Date().toISOString(); state.lastSource = sourceUsed; }
+  save(); btn.disabled = false; btn.innerHTML = '🔄 Atualizar cotações agora';
+  if (updated && !failed.length) alert(`✅ ${updated} cotação(ões) atualizada(s)\nFonte: ${sourceUsed}`);
+  else if (updated && failed.length) alert(`✅ ${updated} atualizada(s) (fonte: ${sourceUsed})\n⚠️ Não encontrei: ${failed.join(', ')}`);
+  else alert(`❌ Nenhuma cotação encontrada.\nVerifique os tickers: ${failed.join(', ')}`);
+}
+
+async function fetchPriceFromBrapi(ticker) {
+  if (!state.apiKey) return null;
+  try {
+    const url = 'https://brapi.dev/api/quote/' + encodeURIComponent(ticker) + '?token=' + encodeURIComponent(state.apiKey);
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const p = j?.results?.[0]?.regularMarketPrice;
+    return (typeof p === 'number' && p > 0) ? p : null;
+  } catch (e) { return null; }
+}
+async function fetchPriceFromYahoo(ticker) {
+  try {
+    const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '.SA?interval=1d&range=1d';
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const p = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+    return (typeof p === 'number' && p > 0) ? p : null;
+  } catch (e) { return null; }
+}
+async function fetchPrice(ticker) {
+  let p = await fetchPriceFromBrapi(ticker); if (p !== null) return { price: p, source: 'brapi' };
+  p = await fetchPriceFromYahoo(ticker); if (p !== null) return { price: p, source: 'Yahoo' };
+  return null;
+}
+
+/* ---------- Start ---------- */
+runRFProjection(false);
+recordSnapshot();
+render();
+setupAutoRefresh();
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
