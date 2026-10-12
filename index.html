@@ -153,7 +153,8 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
   display:flex;flex-direction:column;align-items:center;gap:4px;
   border-radius:12px;letter-spacing:.2px;
 }
-.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:filter .2s}
+.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:filter .2s;pointer-events:none}
+.tabs button span{pointer-events:none}
 .tabs button.active{color:var(--text)}
 .tabs button.active svg{stroke:var(--pink);filter:drop-shadow(0 0 10px rgba(236,72,153,.7))}
 .tabs button.active{color:var(--pink)}
