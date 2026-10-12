@@ -14,28 +14,18 @@
 <link rel="manifest" href="manifest.json">
 <style>
 :root{
-  --bg:#050508;
-  --surface:#0e0e14;
-  --surface-2:#16161e;
-  --border:rgba(255,255,255,.06);
-  --border-strong:rgba(255,255,255,.1);
-  --pink:#ec4899;
-  --cyan:#22d3ee;
-  --purple:#a855f7;
-  --text:#ffffff;
-  --muted:#8a8a9c;
+  --bg:#050508;--surface:#0e0e14;--surface-2:#16161e;
+  --border:rgba(255,255,255,.06);--border-strong:rgba(255,255,255,.1);
+  --pink:#ec4899;--cyan:#22d3ee;--purple:#a855f7;
+  --text:#ffffff;--muted:#8a8a9c;
   --gradient:linear-gradient(135deg,#ec4899 0%,#a855f7 45%,#22d3ee 100%);
-  --success:#22d3ee;
-  --danger:#ff4d80;
+  --success:#22d3ee;--danger:#ff4d80;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
-body{
-  background:var(--bg);color:var(--text);
+body{background:var(--bg);color:var(--text);
   font:15px -apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
-  min-height:100vh;padding-bottom:110px;
-  -webkit-font-smoothing:antialiased;overscroll-behavior-y:none;
-}
+  min-height:100vh;padding-bottom:110px;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
 header{padding:24px 18px 0;max-width:600px;margin:0 auto}
 .brand{font-size:26px;font-weight:800;letter-spacing:-.8px;
   background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}
@@ -103,6 +93,8 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 .tabs button.active svg{stroke:var(--pink);filter:drop-shadow(0 0 10px rgba(236,72,153,.7))}
 .spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
+.catalog-badge{display:inline-block;font-size:10px;color:var(--muted);margin-top:6px}
+.catalog-badge strong{color:var(--cyan)}
 </style>
 </head>
 <body>
@@ -160,7 +152,8 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 <label for="catalogSearch">Pesquisar</label>
 <input id="catalogSearch" placeholder="Ticker, nome ou categoria">
 <div id="catalogList"></div>
-<p class="notice">Catálogo para facilitar o cadastro. Não é lista completa nem fonte de cotações.</p>
+<div class="catalog-badge" id="catalogCount"></div>
+<p class="notice">Catálogo local para facilitar o cadastro. Sincronize com a B3 em <b>Ajustes</b> para ter todos os ativos disponíveis.</p>
 <button id="customBtn" class="ghost" style="width:100%;margin-top:12px">+ Cadastrar ativo personalizado</button>
 <div id="customForm" class="hidden" style="margin-top:12px">
   <label for="customTicker">Ticker</label><input id="customTicker" placeholder="ABCD11">
@@ -172,13 +165,19 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 </section>
 
 <section class="section hidden" id="backup"><h2>Ajustes</h2>
-<label for="apiKeyInput">Chave da API brapi.dev</label>
+
+<label>Sincronização do catálogo</label>
+<button id="syncCatalogBtn" class="primary" style="margin-top:4px">📥 Sincronizar catálogo com a B3</button>
+<p class="notice">Baixa a lista completa de ações, FIIs, ETFs e BDRs da B3 (gasta <b>1 requisição</b> da sua cota brapi). Se a chave falhar, usa uma fonte pública gratuita do GitHub.</p>
+<button id="syncCatalogFreeBtn" class="ghost" style="width:100%;margin-top:8px">🆓 Sincronizar sem gastar cota (fallback GitHub)</button>
+
+<label style="margin-top:24px">Chave da API brapi.dev</label>
 <input id="apiKeyInput" type="password" placeholder="Cole sua chave aqui">
 <p class="notice">Crie sua conta grátis em <b>brapi.dev</b> e copie a chave do dashboard. A chave fica salva só neste aparelho.</p>
 <button id="saveApiKey" class="primary" style="margin-top:12px">Salvar chave</button>
 <button id="removeApiKey" class="danger" style="margin-top:10px">Remover chave</button>
 
-<label style="margin-top:24px">Auto-atualização</label>
+<label style="margin-top:24px">Auto-atualização de cotações</label>
 <select id="autoRefreshSelect">
   <option value="0">Desativada</option>
   <option value="5">A cada 5 minutos</option>
@@ -194,7 +193,7 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 </section>
 
 <section class="section"><h2>Histórico recente</h2><div id="history"></div>
-<p class="notice">Protótipo pessoal. Cotações via brapi.dev (com atraso de até 30 min no plano grátis).</p>
+<p class="notice">Protótipo pessoal. Cotações via brapi.dev. Catálogo sincronizável com a B3.</p>
 </section>
 </main>
 
@@ -225,9 +224,17 @@ const baseCatalog=[
 ['IVVB11','iShares S&P 500','ETF'],['BOVA11','iShares Ibovespa','ETF'],['SMAL11','iShares Small Cap','ETF'],['DIVO11','It Now IDIV','ETF'],['LFTS11','Investo Tesouro Selic','ETF'],['NDIV11','Nu ETF Dividendos','ETF'],
 ['CDB','CDB bancário','Renda fixa'],['TESOURO SELIC','Tesouro Selic','Renda fixa'],['LCI','Letra de Crédito Imobiliário','Renda fixa'],['LCA','Letra de Crédito do Agronegócio','Renda fixa']
 ].map(([ticker,name,type])=>({ticker,name,type,custom:false}));
-let state={catalog:[],trades:[],dividends:[],prices:{},apiKey:'',lastUpdated:null,autoRefresh:0};
+
+let state={catalog:[],trades:[],dividends:[],prices:{},apiKey:'',lastUpdated:null,autoRefresh:0,catalogSyncedAt:null,catalogCount:0};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)state={...state,...s}}catch(e){}
-const catalog=()=>[...baseCatalog,...state.catalog];
+
+const catalog=()=>{
+  const base=baseCatalog.map(a=>({...a}));
+  const custom=state.catalog.map(a=>({...a}));
+  const all=[...base,...custom];
+  const seen=new Set();
+  return all.filter(a=>{if(seen.has(a.ticker))return false;seen.add(a.ticker);return true});
+};
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const num=n=>Number(n||0);
 const today=()=>new Date().toLocaleDateString('en-CA');
@@ -310,20 +317,27 @@ function render(){
       </div>
     </div>`).join(''):'<div class="empty">Nenhuma operação registrada.</div>';
   renderCatalog(document.getElementById('catalogSearch').value||'');
+  const cc=document.getElementById('catalogCount');
+  cc.innerHTML='Ativos no catálogo: <strong>'+catalog().length.toLocaleString('pt-BR')+'</strong>'+(state.catalogSyncedAt?' · sincronizado '+timeAgo(state.catalogSyncedAt):'');
   document.getElementById('apiKeyInput').value=state.apiKey||'';
   document.getElementById('autoRefreshSelect').value=String(state.autoRefresh||0);
 }
 
 function renderCatalog(q=''){
-  q=q.toLowerCase();
-  let items=catalog().filter(a=>(a.ticker+' '+a.name+' '+a.type).toLowerCase().includes(q)).slice(0,70);
-  document.getElementById('catalogList').innerHTML=items.map(a=>`
+  q=q.toLowerCase().trim();
+  let items;
+  if(!q){
+    items=catalog().slice(0,80);
+  }else{
+    items=catalog().filter(a=>(a.ticker+' '+a.name+' '+a.type).toLowerCase().includes(q)).slice(0,80);
+  }
+  document.getElementById('catalogList').innerHTML=items.length?items.map(a=>`
     <div class="asset">
       <div class="assetTop">
         <div><strong>${esc(a.ticker)}</strong><div class="small">${esc(a.name)}</div></div>
         <span class="pill">${esc(a.type)}</span>
       </div>
-    </div>`).join('')||'<div class="empty">Nada encontrado.</div>';
+    </div>`).join(''):'<div class="empty">Nada encontrado. Sincronize o catálogo em Ajustes.</div>';
 }
 
 function choose(a){
@@ -360,6 +374,7 @@ window.showTrade=function(ticker){
   choose(a);
 };
 
+/* ============ COTAÇÕES AUTOMÁTICAS ============ */
 async function refreshQuotes(){
   const btn=document.getElementById('refreshBtn');
   const ps=positions();
@@ -393,9 +408,116 @@ async function refreshQuotes(){
     btn.innerHTML='🔄 Atualizar cotações agora';
   }
 }
-
 document.getElementById('refreshBtn').addEventListener('click',refreshQuotes);
 
+/* ============ SINCRONIZAÇÃO DO CATÁLOGO ============ */
+async function syncCatalogFromBrapi(){
+  const btn=document.getElementById('syncCatalogBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Sincronizando…';
+  try{
+    const headers={};
+    if(state.apiKey)headers['Authorization']='Bearer '+state.apiKey;
+    const url='https://brapi.dev/api/v2/tickers?limit=2000&type=stock,fund,bdr';
+    const r=await fetch(url,{headers});
+    if(!r.ok){
+      if(r.status===401||r.status===403){
+        alert('Chave inválida ou sem permissão. Tente o fallback gratuito do GitHub.');
+      }else{
+        alert('Erro '+r.status+' ao sincronizar. Tente o fallback gratuito.');
+      }
+      return;
+    }
+    const j=await r.json();
+    const list=j?.tickers||j?.results||j?.data||[];
+    if(!Array.isArray(list)||!list.length){
+      alert('A brapi respondeu, mas o formato não foi reconhecido. Tente o fallback gratuito.');
+      return;
+    }
+    applyCatalog(list);
+  }catch(e){
+    alert('Erro de rede. Verifique sua internet ou use o fallback gratuito.');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='📥 Sincronizar catálogo com a B3';
+  }
+}
+document.getElementById('syncCatalogBtn').addEventListener('click',syncCatalogFromBrapi);
+
+async function syncCatalogFromGitHub(){
+  const btn=document.getElementById('syncCatalogFreeBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Buscando fallback…';
+  try{
+    const [r1,r2]=await Promise.all([
+      fetch('https://cvscarlos.github.io/b3-api-dados-historicos/api/v1/tickers-cash-market.json').catch(()=>null),
+      fetch('https://cvscarlos.github.io/b3-api-dados-historicos/api/v1/tickers-ETF.json').catch(()=>null)
+    ]);
+    let merged={};
+    if(r1&&r1.ok){
+      const j1=await r1.json();
+      const d=j1?.data||{};
+      for(const tk in d){
+        const v=d[tk];
+        merged[tk]={ticker:tk,name:v.nomeCurto||tk,type:'Ação'};
+      }
+    }
+    if(r2&&r2.ok){
+      const j2=await r2.json();
+      const d=j2?.data||{};
+      for(const key in d){
+        const v=d[key];
+        const tk=v.codNeg||key.split('-')[0];
+        if(tk)merged[tk]={ticker:tk,name:v.nome||tk,type:'ETF'};
+      }
+    }
+    const list=Object.values(merged);
+    if(!list.length){
+      alert('Não foi possível baixar o catálogo gratuito. Tente novamente mais tarde.');
+      return;
+    }
+    // Classifica FIIs heurísticamente: tickers terminando em 11 e que não são ETFs conhecidos
+    const etfSet=new Set(['IVVB11','BOVA11','SMAL11','DIVO11','LFTS11','NDIV11','XINA11','HASH11','QBTC11','BITH11','ETHE11','GOLD11','DOLA11']);
+    for(const a of list){
+      if(/11$/.test(a.ticker)&&!etfSet.has(a.ticker)&&a.type==='Ação'){
+        a.type='FII';
+      }
+    }
+    applyCatalog(list,'github');
+  }catch(e){
+    alert('Erro ao buscar catálogo gratuito.');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='🆓 Sincronizar sem gastar cota (fallback GitHub)';
+  }
+}
+document.getElementById('syncCatalogFreeBtn').addEventListener('click',syncCatalogFromGitHub);
+
+function applyCatalog(list,source){
+  const seen=new Set(baseCatalog.map(a=>a.ticker));
+  const novel=[];
+  for(const item of list){
+    const tk=(item.ticker||item.symbol||item.codNeg||'').toString().toUpperCase().trim();
+    if(!tk||seen.has(tk))continue;
+    seen.add(tk);
+    const name=item.name||item.shortName||item.nomeCurto||item.nome||tk;
+    let type=item.type||item.subType||item.tipo||'Ação';
+    type=String(type);
+    if(type.toLowerCase()==='stock'||type.toLowerCase()==='unit')type='Ação';
+    else if(type.toLowerCase()==='fund'||type.toLowerCase()==='fii')type='FII';
+    else if(type.toLowerCase()==='etf')type='ETF';
+    else if(type.toLowerCase()==='bdr')type='BDR';
+    else if(type.toLowerCase().includes('fi-'))type='FII';
+    novel.push({ticker:tk,name,type,custom:false});
+  }
+  state.catalog=novel;
+  state.catalogSyncedAt=new Date().toISOString();
+  state.catalogCount=novel.length;
+  save();
+  alert(`✅ Catálogo sincronizado!\n${novel.length.toLocaleString('pt-BR')} ativos adicionados.`);
+}
+
+/* ============ UI: BUSCA E OPERAÇÃO ============ */
 document.getElementById('assetSearch').addEventListener('input',e=>{
   const q=e.target.value.toLowerCase();
   const matches=catalog().filter(a=>(a.ticker+' '+a.name).toLowerCase().includes(q)).slice(0,12);
@@ -445,10 +567,11 @@ document.getElementById('saveCustom').addEventListener('click',()=>{
   alert('Ativo adicionado.');
 });
 
+/* ============ AJUSTES ============ */
 document.getElementById('saveApiKey').addEventListener('click',()=>{
   const k=document.getElementById('apiKeyInput').value.trim();
   state.apiKey=k;save();
-  alert(k?'Chave salva. Toque em "Atualizar cotações agora" na carteira.':'Chave removida.');
+  alert(k?'Chave salva.':'Chave removida.');
 });
 
 document.getElementById('removeApiKey').addEventListener('click',()=>{
@@ -491,11 +614,12 @@ document.getElementById('importFile').addEventListener('change',async e=>{
 
 document.getElementById('clearBtn').addEventListener('click',()=>{
   if(confirm('Apagar carteira, operações e catálogo pessoal deste aparelho?')){
-    state={catalog:[],trades:[],dividends:[],prices:{},apiKey:state.apiKey,lastUpdated:null,autoRefresh:0};
+    state={catalog:[],trades:[],dividends:[],prices:{},apiKey:state.apiKey,lastUpdated:null,autoRefresh:0,catalogSyncedAt:null,catalogCount:0};
     save();
   }
 });
 
+/* ============ INICIALIZAÇÃO ============ */
 render();
 setupAutoRefresh();
 
