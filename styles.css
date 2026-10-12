@@ -91,7 +91,6 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 .div-meta{font-size:11.5px;color:var(--muted);margin-top:3px}
 .div-type{font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;background:rgba(34,211,238,.15);color:var(--cyan);text-transform:uppercase}
 
-/* ---------- Alocação por classe ---------- */
 .alloc-card{
   background:linear-gradient(135deg,rgba(236,72,153,.06),rgba(34,211,238,.06));
   border:1px solid rgba(255,255,255,.08);
@@ -134,7 +133,6 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
   margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .month-total{color:var(--cyan)}
 
-/* ---------- Modal de edição de preço/saldo ---------- */
 .modal-overlay{
   position:fixed;inset:0;z-index:10000;
   background:rgba(5,5,8,.78);
@@ -185,3 +183,6 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 }
 .modal-input:focus{outline:0;background:transparent !important}
 .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.cdi-status{font-size:11px;color:var(--muted);margin-top:4px;min-height:16px}
+.cdi-status.ok{color:var(--success)}
+.cdi-status.err{color:var(--danger)}
