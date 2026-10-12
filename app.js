@@ -46,34 +46,93 @@ const $=id=>document.getElementById(id);
 function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
-/* ---------- Parser BR de número ---------- */
+/* ============================================================
+   MÁSCARA MONETÁRIA em tempo real (padrão app bancário)
+   Usuário digita apenas dígitos; o campo formata sozinho.
+   Ex.: "1000" → "10,00"   |   "100000" → "1.000,00"
+   ============================================================ */
+function digitsToMoney(digits){
+  digits=String(digits||'').replace(/\D/g,'');
+  if(!digits)return '';
+  if(digits.length>15)digits=digits.slice(0,15);
+  digits=digits.replace(/^0+/,'');
+  if(!digits)return '0,00';
+  const n=Number(digits)/100;
+  return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function attachMoneyMask(input){
+  input.addEventListener('input',()=>{
+    const digits=input.value.replace(/\D/g,'');
+    const formatted=digitsToMoney(digits);
+    input.value=formatted;
+    // caret sempre no fim
+    requestAnimationFrame(()=>{
+      const len=input.value.length;
+      input.setSelectionRange(len,len);
+    });
+  });
+  // ao focar, se vazio, não força nada
+  input.addEventListener('blur',()=>{
+    if(!input.value.trim())input.value='';
+  });
+}
+/* Lê valor monetário digitado (já formatado em pt-BR) e devolve Number */
+function parseMoneyBR(str){
+  if(!str)return 0;
+  const s=String(str).replace(/[^\d,]/g,'').replace(/\./g,'').replace(',','.');
+  const n=Number(s);
+  return Number.isFinite(n)?n:0;
+}
+/* Parser genérico (para quantidade: aceita 10, 10,5, 10.5) */
 function parseNum(str){
   if(str===null||str===undefined)return 0;
   let s=String(str).trim().replace(/[^\d.,-]/g,'');
   if(!s)return 0;
   const hasComma=s.includes(',');
   const hasDot=s.includes('.');
-  if(hasComma && hasDot){
-    if(s.lastIndexOf(',')>s.lastIndexOf('.')){
-      s=s.replace(/\./g,'').replace(',','.');
-    } else {
-      s=s.replace(/,/g,'');
-    }
-  } else if(hasComma){
-    s=s.replace(',','.');
-  } else if(hasDot){
-    if(/^\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');
+  if(hasComma&&hasDot){
+    if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');
+    else s=s.replace(/,/g,'');
+  } else if(hasComma){s=s.replace(',','.')}
+  else if(hasDot){
+    if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
   }
   const n=Number(s);
   return Number.isFinite(n)?n:0;
 }
-
-/* ---------- Formatadores ---------- */
 function numToBR(n){
   return Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 function qtyToBR(n){
   return Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:8});
+}
+
+/* ---------- Modal reutilizável ---------- */
+function openMoneyModal(title,defaultValue){
+  return new Promise(resolve=>{
+    const overlay=$('modalOverlay');
+    const input=$('modalInput');
+    $('modalTitle').textContent=title;
+    input.value=defaultValue?digitsToMoney(String(defaultValue).replace(/\D/g,'')):'';
+    overlay.classList.remove('hidden');
+    setTimeout(()=>{input.focus();const l=input.value.length;input.setSelectionRange(l,l)},60);
+
+    function cleanup(){
+      overlay.classList.add('hidden');
+      $('modalConfirm').removeEventListener('click',onConfirm);
+      $('modalCancel').removeEventListener('click',onCancel);
+      overlay.removeEventListener('click',onOverlay);
+      input.removeEventListener('keydown',onKey);
+    }
+    function onConfirm(){const v=input.value;cleanup();resolve(v)}
+    function onCancel(){cleanup();resolve(null)}
+    function onOverlay(e){if(e.target===overlay)onCancel()}
+    function onKey(e){if(e.key==='Enter'){e.preventDefault();onConfirm()}if(e.key==='Escape')onCancel()}
+    $('modalConfirm').addEventListener('click',onConfirm);
+    $('modalCancel').addEventListener('click',onCancel);
+    overlay.addEventListener('click',onOverlay);
+    input.addEventListener('keydown',onKey);
+  });
 }
 
 function ensureTickerInCatalog(ticker){
@@ -380,17 +439,19 @@ window.showTab=function(id){
   });
   window.scrollTo({top:0,behavior:'smooth'});
 };
-window.updatePrice=function(ticker){
+
+window.updatePrice=async function(ticker){
   const p=positions().find(x=>x.ticker===ticker);
   const isRF=p?.isRF;
-  const label=isRF?('Saldo atual de '+ticker+' (R$):'):('Preço atual de '+ticker+' (R$):');
+  const label=isRF?('Saldo atual de '+ticker):('Preço atual de '+ticker);
   const def=isRF?numToBR(p?.current||p?.cost||0):numToBR(p?.current||0);
-  const v=prompt(label,def);
+  const v=await openMoneyModal(label, def);
   if(v===null)return;
-  const n=parseNum(v);
+  const n=parseMoneyBR(v);
   if(!Number.isFinite(n)||n<=0){alert('Informe um valor maior que zero.');return}
   state.prices[ticker]=n;save();
 };
+
 window.showTrade=function(ticker){
   window.showTab('trade');
   const a=catalog().find(x=>x.ticker===ticker)||{ticker,name:ticker,type:isRFTicker(ticker)?'Renda fixa':'Outro'};
@@ -462,6 +523,12 @@ async function refreshQuotes(){
   else alert(`❌ Nenhuma cotação encontrada.\nVerifique os tickers: ${failed.join(', ')}`);
 }
 
+/* ---------- Aplica máscara monetária nos inputs ---------- */
+['tradePrice','tradeRFValue','fees','divAmount','modalInput'].forEach(id=>{
+  const el=$(id);
+  if(el)attachMoneyMask(el);
+});
+
 /* ---------- Eventos ---------- */
 $('refreshBtn').addEventListener('click',refreshQuotes);
 $('operation').addEventListener('change',()=>{if(!$('tradeRFFields').classList.contains('hidden'))updateRFLabel()});
@@ -472,7 +539,6 @@ $('assetSearch').addEventListener('input',e=>{
   const upper=raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
   const exact=catalog().find(a=>a.ticker===upper);
 
-  // Auto-toggle RF quando o usuário digita exatamente um ticker conhecido
   if(exact && /^[a-zA-Z0-9]{2,}$/.test(raw)){
     toggleRFFields(exact.type==='Renda fixa'||isRFTicker(exact.ticker));
   } else if(!exact){
@@ -511,16 +577,16 @@ $('tradeForm').addEventListener('submit',e=>{
   const entry=catalog().find(x=>x.ticker===ticker);
   const isRF=(entry?.type==='Renda fixa')||isRFTicker(ticker);
   const side=$('operation').value;
-  const fees=parseNum($('fees').value);
+  const fees=parseMoneyBR($('fees').value);
 
   let qty, price;
   if(isRF){
-    const value=parseNum($('tradeRFValue').value);
+    const value=parseMoneyBR($('tradeRFValue').value);
     if(value<=0){alert('Informe um valor válido em "Valor aplicado/resgatado".');return}
     qty=1; price=value;
   } else {
     qty=parseNum($('tradeQty').value);
-    price=parseNum($('tradePrice').value);
+    price=parseMoneyBR($('tradePrice').value);
     if(qty<=0||price<=0){alert('Informe quantidade e preço válidos.');return}
   }
 
@@ -533,7 +599,7 @@ $('tradeForm').addEventListener('submit',e=>{
 
   ensureTickerInCatalog(ticker);
   state.trades.push({ticker,side,qty,price,fees,date:$('tradeDate').value||today()});
-  if(state.prices[ticker]===undefined)state.prices[ticker]=isRF?price:price;
+  if(state.prices[ticker]===undefined)state.prices[ticker]=price;
   save();e.target.reset();
   $('tradeDate').value=today();
   $('assetSearch').value='';
@@ -579,7 +645,7 @@ $('divForm').addEventListener('submit',e=>{
     const raw=$('divTickerSearch').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(raw&&raw.length>=3)ticker=raw;
   }
-  const amount=parseNum($('divAmount').value),
+  const amount=parseMoneyBR($('divAmount').value),
         date=$('divDate').value||today(),
         kind=$('divKind').value;
   if(!ticker||amount<=0){alert('Escolha um ativo e informe um valor válido.');return}
