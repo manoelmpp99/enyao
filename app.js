@@ -19,6 +19,9 @@ const COLOR_MAP={
   'Outro':'#64748b'
 };
 
+const RF_TICKERS=['CDB','LCI','LCA','CRI','CRA','DEBENTURE','TESOURO SELIC','TESOURO IPCA','TESOURO PREFIXADO'];
+const isRFTicker=t=>RF_TICKERS.includes(t);
+
 let state={catalog:[],trades:[],dividends:[],prices:{},apiKey:DEFAULT_API_KEY,lastUpdated:null,autoRefresh:0,lastSource:''};
 try{
   const raw=localStorage.getItem(KEY);
@@ -38,44 +41,91 @@ state.apiKey=DEFAULT_API_KEY;
 const catalog=()=>[...baseCatalog,...state.catalog];
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const pct=n=>{const v=Number(n||0);return (v>=0?'+':'')+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%'};
-const num=n=>Number(n||0);
 const today=()=>new Date().toLocaleDateString('en-CA');
 const $=id=>document.getElementById(id);
 function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
+/* ---------- Parser BR de número ---------- */
+function parseNum(str){
+  if(str===null||str===undefined)return 0;
+  let s=String(str).trim().replace(/[^\d.,-]/g,'');
+  if(!s)return 0;
+  const hasComma=s.includes(',');
+  const hasDot=s.includes('.');
+  if(hasComma && hasDot){
+    if(s.lastIndexOf(',')>s.lastIndexOf('.')){
+      s=s.replace(/\./g,'').replace(',','.');
+    } else {
+      s=s.replace(/,/g,'');
+    }
+  } else if(hasComma){
+    s=s.replace(',','.');
+  } else if(hasDot){
+    if(/^\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');
+  }
+  const n=Number(s);
+  return Number.isFinite(n)?n:0;
+}
+
+/* ---------- Formatadores ---------- */
+function numToBR(n){
+  return Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function qtyToBR(n){
+  return Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:8});
+}
+
 function ensureTickerInCatalog(ticker){
   if(!ticker)return;
   if(catalog().some(a=>a.ticker===ticker))return;
-  state.catalog.push({ticker,name:ticker,type:'Outro',custom:true});
+  const type=isRFTicker(ticker)?'Renda fixa':'Outro';
+  state.catalog.push({ticker,name:ticker,type,custom:true});
 }
 
 function positions(){
   let m={};
   for(const t of state.trades){
-    let p=m[t.ticker]||(m[t.ticker]={ticker:t.ticker,qty:0,cost:0,realized:0});
-    if(t.side==='buy'){p.cost+=t.qty*t.price+t.fees;p.qty+=t.qty}
-    else{
-      let avg=p.qty?p.cost/p.qty:0;
-      let sold=Math.min(t.qty,p.qty);
-      p.realized+=(t.price*sold-t.fees)-(avg*sold);
-      p.cost-=avg*sold;p.qty-=sold;
-      if(p.qty<1e-8){p.qty=0;p.cost=0}
+    const c=catalog().find(x=>x.ticker===t.ticker);
+    const rf=(c?.type==='Renda fixa')||isRFTicker(t.ticker);
+    let p=m[t.ticker]||(m[t.ticker]={ticker:t.ticker,qty:0,cost:0,realized:0,isRF:false});
+    p.isRF=rf;
+    if(rf){
+      if(t.side==='buy')p.cost+=t.qty*t.price+t.fees;
+      else p.cost-=(t.qty*t.price+t.fees);
+    } else {
+      if(t.side==='buy'){p.cost+=t.qty*t.price+t.fees;p.qty+=t.qty}
+      else{
+        let avg=p.qty?p.cost/p.qty:0;
+        let sold=Math.min(t.qty,p.qty);
+        p.realized+=(t.price*sold-t.fees)-(avg*sold);
+        p.cost-=avg*sold;p.qty-=sold;
+        if(p.qty<1e-8){p.qty=0;p.cost=0}
+      }
     }
   }
   const cutoff=new Date(Date.now()-365*24*60*60*1000).toISOString().slice(0,10);
-  return Object.values(m).filter(p=>p.qty>1e-8).map(p=>{
+  return Object.values(m).filter(p=>p.isRF ? p.cost>0.01 : p.qty>1e-8).map(p=>{
     const c=catalog().find(x=>x.ticker===p.ticker);
-    p.avg=p.qty?p.cost/p.qty:0;
-    p.current=num(state.prices[p.ticker]??p.avg);
-    p.market=p.qty*p.current;
-    p.unrealized=p.market-p.cost;
-    p.unrealizedPct=p.cost>0?(p.unrealized/p.cost)*100:0;
     p.name=c?.name||p.ticker;
     p.type=c?.type||'Outro';
+    if(p.isRF){
+      p.qty=1;
+      p.avg=p.cost;
+      p.current=Number(state.prices[p.ticker]??p.cost)||0;
+      p.market=p.current;
+      p.unrealized=p.current-p.cost;
+      p.unrealizedPct=p.cost>0?(p.unrealized/p.cost)*100:0;
+    } else {
+      p.avg=p.qty?p.cost/p.qty:0;
+      p.current=Number(state.prices[p.ticker]??p.avg)||0;
+      p.market=p.qty*p.current;
+      p.unrealized=p.market-p.cost;
+      p.unrealizedPct=p.cost>0?(p.unrealized/p.cost)*100:0;
+    }
     let div12m=0;
     for(const d of state.dividends){
-      if(d.ticker===p.ticker&&d.date>=cutoff)div12m+=num(d.amount);
+      if(d.ticker===p.ticker&&d.date>=cutoff)div12m+=Number(d.amount||0);
     }
     p.div12m=div12m;
     p.yoc=p.cost>0?(div12m/p.cost)*100:0;
@@ -98,14 +148,13 @@ function computeDividendTotals(){
   const y=String(now.getFullYear());
   let month=0,year=0;
   for(const d of state.dividends){
-    const a=num(d.amount);
+    const a=Number(d.amount||0);
     if((d.date||'').startsWith(ym))month+=a;
     if((d.date||'').startsWith(y))year+=a;
   }
   return {month,year};
 }
 
-/* ---------- Donut de alocação ---------- */
 function renderAllocation(ps){
   const container=$('allocation');
   if(!ps.length){container.innerHTML='';return}
@@ -183,11 +232,39 @@ function render(){
   $('assets').innerHTML=ps.length?ps.map(p=>{
     const pos=p.unrealized>=0;
     const yocText=p.div12m>0?pct(p.yoc):'—';
+
+    if(p.isRF){
+      return `<div class="asset">
+        <div class="assetTop">
+          <div>
+            <div class="ticker">${esc(p.ticker)} <span class="pill">${esc(p.type)}</span></div>
+            <div class="small">${esc(p.name)}</div>
+          </div>
+          <div class="right">
+            <strong>${brl(p.market)}</strong>
+            <div class="small">Saldo atual</div>
+          </div>
+        </div>
+        <div class="sub-grid">
+          <div><div class="sub-label">Valor aplicado</div><div class="sub-value">${brl(p.cost)}</div></div>
+          <div><div class="sub-label">Rentabilidade</div><div class="sub-value" style="color:${pos?'var(--success)':'var(--danger)'}">${pct(p.unrealizedPct)}</div></div>
+          <div><div class="sub-label">Resultado</div><div class="sub-value" style="color:${pos?'var(--success)':'var(--danger)'}">${pos?'+':''}${brl(p.unrealized)}</div></div>
+          <div><div class="sub-label">Proventos 12m</div><div class="sub-value" style="color:var(--cyan)">${p.div12m>0?brl(p.div12m):'—'}</div></div>
+        </div>
+        <div class="yoc-line"><span>YOC 12m (sobre valor aplicado)</span><b>${yocText}</b></div>
+        <div class="actions">
+          <button type="button" class="ghost-sm" onclick="updatePrice('${esc(p.ticker)}')">Atualizar saldo</button>
+          <button type="button" class="ghost-sm" onclick="showTrade('${esc(p.ticker)}')">Operar</button>
+          <button type="button" class="ghost-sm" onclick="showProvento('${esc(p.ticker)}')">Provento</button>
+        </div>
+      </div>`;
+    }
+
     return `<div class="asset">
       <div class="assetTop">
         <div>
           <div class="ticker">${esc(p.ticker)} <span class="pill">${esc(p.type)}</span></div>
-          <div class="small">${esc(p.name)} · ${p.qty.toLocaleString('pt-BR')} un.</div>
+          <div class="small">${esc(p.name)} · ${qtyToBR(p.qty)} un.</div>
         </div>
         <div class="right">
           <strong>${brl(p.market)}</strong>
@@ -216,12 +293,18 @@ function render(){
 
 function renderTradeHistory(){
   const history=state.trades.slice().reverse().slice(0,20);
-  $('tradeHistory').innerHTML=history.length?history.map(t=>`
-    <div class="asset"><div class="assetTop">
-      <div><strong>${t.side==='buy'?'Compra':'Venda'} · ${esc(t.ticker)}</strong>
-      <div class="small">${esc(t.date)} · ${t.qty} un. a ${brl(t.price)}</div></div>
+  $('tradeHistory').innerHTML=history.length?history.map(t=>{
+    const isRF=isRFTicker(t.ticker)||catalog().find(x=>x.ticker===t.ticker)?.type==='Renda fixa';
+    const label=isRF?(t.side==='buy'?'Aplicação':'Resgate'):(t.side==='buy'?'Compra':'Venda');
+    const detail=isRF
+      ? `${esc(t.date)} · ${brl(t.qty*t.price)}`
+      : `${esc(t.date)} · ${qtyToBR(t.qty)} un. a ${brl(t.price)}`;
+    return `<div class="asset"><div class="assetTop">
+      <div><strong>${label} · ${esc(t.ticker)}</strong>
+      <div class="small">${detail}</div></div>
       <strong>${brl(t.qty*t.price+t.fees)}</strong>
-    </div></div>`).join(''):'<div class="empty">Nenhuma operação registrada.</div>';
+    </div></div>`;
+  }).join(''):'<div class="empty">Nenhuma operação registrada.</div>';
 }
 
 function renderDivHistory(){
@@ -234,7 +317,7 @@ function renderDivHistory(){
     const [y,m]=k.split('-');
     const label=`${mn[Number(m)-1]} ${y}`;
     const items=groups[k];
-    const total=items.reduce((s,d)=>s+num(d.amount),0);
+    const total=items.reduce((s,d)=>s+Number(d.amount||0),0);
     return `<div class="month-group">
       <div class="month-label"><span>${label}</span><span class="month-total">${brl(total)}</span></div>
       ${items.map(d=>`<div class="div-card"><div class="div-row">
@@ -249,15 +332,35 @@ function renderDivHistory(){
   $('divHistory').innerHTML=html;
 }
 
+function toggleRFFields(isRF){
+  $('tradeRegularFields').classList.toggle('hidden',isRF);
+  $('tradeRFFields').classList.toggle('hidden',!isRF);
+  const op=$('operation');
+  if(isRF){
+    op.options[0].text='Aplicação';
+    op.options[1].text='Resgate';
+    updateRFLabel();
+  } else {
+    op.options[0].text='Compra';
+    op.options[1].text='Venda';
+  }
+}
+function updateRFLabel(){
+  const op=$('operation');
+  $('rfValueLabel').textContent=op.value==='buy'?'aplicado':'resgatado';
+}
+
 function choose(a,autoAdd){
   if(autoAdd)ensureTickerInCatalog(a.ticker);
   $('chosenTicker').value=a.ticker;
+  $('chosenType').value=a.type||'Outro';
   $('assetSearch').value=a.ticker+' — '+a.name;
   $('selectedTicker').textContent=a.ticker;
   $('selectedName').textContent=a.name;
   $('selectedType').textContent='Categoria: '+a.type;
   $('selectedBox').classList.remove('hidden');
   $('suggestions').classList.add('hidden');
+  toggleRFFields(a.type==='Renda fixa'||isRFTicker(a.ticker));
 }
 
 function chooseDiv(a,autoAdd){
@@ -279,15 +382,18 @@ window.showTab=function(id){
 };
 window.updatePrice=function(ticker){
   const p=positions().find(x=>x.ticker===ticker);
-  const v=prompt('Preço manual de '+ticker+' (R$):',String(p?.current||''));
+  const isRF=p?.isRF;
+  const label=isRF?('Saldo atual de '+ticker+' (R$):'):('Preço atual de '+ticker+' (R$):');
+  const def=isRF?numToBR(p?.current||p?.cost||0):numToBR(p?.current||0);
+  const v=prompt(label,def);
   if(v===null)return;
-  const n=Number(v.replace(',','.'));
-  if(!Number.isFinite(n)||n<=0){alert('Informe um preço maior que zero.');return}
+  const n=parseNum(v);
+  if(!Number.isFinite(n)||n<=0){alert('Informe um valor maior que zero.');return}
   state.prices[ticker]=n;save();
 };
 window.showTrade=function(ticker){
   window.showTab('trade');
-  const a=catalog().find(x=>x.ticker===ticker)||{ticker,name:ticker,type:'Outro'};
+  const a=catalog().find(x=>x.ticker===ticker)||{ticker,name:ticker,type:isRFTicker(ticker)?'Renda fixa':'Outro'};
   choose(a,false);
 };
 window.showProvento=function(ticker){
@@ -337,9 +443,8 @@ async function refreshQuotes(){
   const btn=$('refreshBtn');
   const ps=positions();
   if(!ps.length){alert('Sem posições para atualizar.');return}
-  const rf=['CDB','LCI','LCA','CRI','CRA','DEBENTURE','TESOURO SELIC','TESOURO IPCA','TESOURO PREFIXADO'];
-  const tickers=ps.map(p=>p.ticker).filter(t=>!rf.includes(t));
-  if(!tickers.length){alert('Só há renda fixa. Use "Editar preço" em cada ativo.');return}
+  const tickers=ps.map(p=>p.ticker).filter(t=>!isRFTicker(t));
+  if(!tickers.length){alert('Só há renda fixa. Use "Atualizar saldo" em cada ativo.');return}
   btn.disabled=true;
   btn.innerHTML='<span class="spinner"></span>Buscando cotações…';
   let updated=0,failed=[],sourceUsed='';
@@ -359,25 +464,36 @@ async function refreshQuotes(){
 
 /* ---------- Eventos ---------- */
 $('refreshBtn').addEventListener('click',refreshQuotes);
+$('operation').addEventListener('change',()=>{if(!$('tradeRFFields').classList.contains('hidden'))updateRFLabel()});
 
 $('assetSearch').addEventListener('input',e=>{
   const raw=e.target.value.trim();
   const q=raw.toLowerCase();
+  const upper=raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const exact=catalog().find(a=>a.ticker===upper);
+
+  // Auto-toggle RF quando o usuário digita exatamente um ticker conhecido
+  if(exact && /^[a-zA-Z0-9]{2,}$/.test(raw)){
+    toggleRFFields(exact.type==='Renda fixa'||isRFTicker(exact.ticker));
+  } else if(!exact){
+    toggleRFFields(false);
+  }
+
   const matches=catalog().filter(a=>(a.ticker+' '+a.name).toLowerCase().includes(q)).slice(0,10);
   const box=$('suggestions');
   let html='';
-  const upper=raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  const exact=matches.some(a=>a.ticker===upper);
-  if(upper&&!exact&&upper.length>=3){
+  const exactInMatches=matches.some(a=>a.ticker===upper);
+  if(upper&&!exactInMatches&&upper.length>=3){
     html+=`<button type="button" class="suggestion new" data-new="1"><span><strong>+ Usar "${esc(upper)}"</strong><br><small style="color:var(--muted)">Ticker novo — salvo automaticamente</small></span><span class="pill pill-new">Novo</span></button>`;
   }
   html+=matches.map((a,i)=>`<button type="button" class="suggestion" data-index="${i}"><span><strong>${esc(a.ticker)}</strong><br><small style="color:var(--muted)">${esc(a.name)}</small></span><span class="pill">${esc(a.type)}</span></button>`).join('');
   box.innerHTML=html;
   box.classList.toggle('hidden',!q&&!upper);
   const nb=box.querySelector('button[data-new]');
-  if(nb)nb.addEventListener('click',()=>choose({ticker:upper,name:upper,type:'Outro'},true));
+  if(nb)nb.addEventListener('click',()=>choose({ticker:upper,name:upper,type:isRFTicker(upper)?'Renda fixa':'Outro'},true));
   box.querySelectorAll('button[data-index]').forEach(b=>b.addEventListener('click',()=>choose(matches[Number(b.dataset.index)],false)));
   $('chosenTicker').value='';
+  $('chosenType').value='';
   $('selectedBox').classList.add('hidden');
 });
 
@@ -390,21 +506,41 @@ $('tradeForm').addEventListener('submit',e=>{
     const raw=$('assetSearch').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(raw&&raw.length>=3)ticker=raw;
   }
-  const side=$('operation').value,
-        qty=num($('tradeQty').value),
-        price=num($('tradePrice').value),
-        fees=num($('fees').value);
-  if(!ticker||qty<=0||price<=0){alert('Escolha um ativo e informe quantidade e preço válidos.');return}
+  if(!ticker){alert('Escolha um ativo.');return}
+
+  const entry=catalog().find(x=>x.ticker===ticker);
+  const isRF=(entry?.type==='Renda fixa')||isRFTicker(ticker);
+  const side=$('operation').value;
+  const fees=parseNum($('fees').value);
+
+  let qty, price;
+  if(isRF){
+    const value=parseNum($('tradeRFValue').value);
+    if(value<=0){alert('Informe um valor válido em "Valor aplicado/resgatado".');return}
+    qty=1; price=value;
+  } else {
+    qty=parseNum($('tradeQty').value);
+    price=parseNum($('tradePrice').value);
+    if(qty<=0||price<=0){alert('Informe quantidade e preço válidos.');return}
+  }
+
   const p=positions().find(x=>x.ticker===ticker);
-  if(side==='sell'&&(!p||qty>p.qty+1e-8)){alert('Quantidade maior que a posição disponível.');return}
+  if(side==='sell'){
+    if(!p){alert('Você não tem posição nesse ativo.');return}
+    if(isRF && (qty*price)>p.cost+1e-6){alert('Valor de resgate maior que o aplicado.');return}
+    if(!isRF && qty>p.qty+1e-8){alert('Quantidade maior que a posição disponível.');return}
+  }
+
   ensureTickerInCatalog(ticker);
   state.trades.push({ticker,side,qty,price,fees,date:$('tradeDate').value||today()});
-  if(state.prices[ticker]===undefined)state.prices[ticker]=price;
+  if(state.prices[ticker]===undefined)state.prices[ticker]=isRF?price:price;
   save();e.target.reset();
   $('tradeDate').value=today();
   $('assetSearch').value='';
   $('chosenTicker').value='';
+  $('chosenType').value='';
   $('selectedBox').classList.add('hidden');
+  toggleRFFields(false);
   window.showTab('portfolio');
 });
 
@@ -430,7 +566,7 @@ $('divTickerSearch').addEventListener('input',e=>{
   box.innerHTML=html;
   box.classList.toggle('hidden',!q&&!upper);
   const nb=box.querySelector('button[data-new]');
-  if(nb)nb.addEventListener('click',()=>chooseDiv({ticker:upper,name:upper,type:'Outro'},true));
+  if(nb)nb.addEventListener('click',()=>chooseDiv({ticker:upper,name:upper,type:isRFTicker(upper)?'Renda fixa':'Outro'},true));
   box.querySelectorAll('button[data-index]').forEach(b=>b.addEventListener('click',()=>chooseDiv(matches[Number(b.dataset.index)],false)));
   $('divChosenTicker').value='';
   $('divSelectedBox').classList.add('hidden');
@@ -443,7 +579,7 @@ $('divForm').addEventListener('submit',e=>{
     const raw=$('divTickerSearch').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(raw&&raw.length>=3)ticker=raw;
   }
-  const amount=num($('divAmount').value),
+  const amount=parseNum($('divAmount').value),
         date=$('divDate').value||today(),
         kind=$('divKind').value;
   if(!ticker||amount<=0){alert('Escolha um ativo e informe um valor válido.');return}
