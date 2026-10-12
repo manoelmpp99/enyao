@@ -1,4 +1,4 @@
-const CACHE='enyao-v9';
+const CACHE='enyao-v10';
 const ASSETS=['./','./index.html','./styles.css','./app.js','./manifest.json','./icon.svg'];
 
 self.addEventListener('install',e=>{
