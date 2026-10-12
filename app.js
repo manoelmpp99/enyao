@@ -1,5 +1,5 @@
 /* ============================================================
-   CHAVE DA API BRAPI — já embutida (troque quando regenerar)
+   CHAVE DA API BRAPI — já embutida
    ============================================================ */
 const DEFAULT_API_KEY = 'n2jSRHKNBe1nYrLza56x6n';
 
@@ -11,6 +11,14 @@ const baseCatalog=[
 ['CDB','CDB bancário','Renda fixa'],['TESOURO SELIC','Tesouro Selic','Renda fixa'],['TESOURO IPCA','Tesouro IPCA+','Renda fixa'],['TESOURO PREFIXADO','Tesouro Prefixado','Renda fixa'],['LCI','Letra de Crédito Imobiliário','Renda fixa'],['LCA','Letra de Crédito do Agronegócio','Renda fixa'],['CRI','Certificado de Recebíveis Imobiliários','Renda fixa'],['CRA','Certificado de Recebíveis do Agronegócio','Renda fixa'],['DEBENTURE','Debênture','Renda fixa']
 ].map(([ticker,name,type])=>({ticker,name,type,custom:false}));
 
+const COLOR_MAP={
+  'Ação':'#ec4899',
+  'FII':'#22d3ee',
+  'ETF':'#a855f7',
+  'Renda fixa':'#10b981',
+  'Outro':'#64748b'
+};
+
 let state={catalog:[],trades:[],dividends:[],prices:{},apiKey:DEFAULT_API_KEY,lastUpdated:null,autoRefresh:0,lastSource:''};
 try{
   const raw=localStorage.getItem(KEY);
@@ -20,12 +28,12 @@ try{
     if(Array.isArray(s.trades))state.trades=s.trades;
     if(Array.isArray(s.dividends))state.dividends=s.dividends;
     if(s.prices&&typeof s.prices==='object')state.prices=s.prices;
-    if(s.apiKey)state.apiKey=s.apiKey;
     if(s.lastUpdated)state.lastUpdated=s.lastUpdated;
     if(typeof s.autoRefresh==='number')state.autoRefresh=s.autoRefresh;
     if(s.lastSource)state.lastSource=s.lastSource;
   }
 }catch(e){console.warn('Erro lendo estado',e)}
+state.apiKey=DEFAULT_API_KEY;
 
 const catalog=()=>[...baseCatalog,...state.catalog];
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -97,6 +105,58 @@ function computeDividendTotals(){
   return {month,year};
 }
 
+/* ---------- Donut de alocação ---------- */
+function renderAllocation(ps){
+  const container=$('allocation');
+  if(!ps.length){container.innerHTML='';return}
+  const total=ps.reduce((s,p)=>s+p.market,0);
+  if(total<=0){container.innerHTML='';return}
+
+  const groups={};
+  for(const p of ps){
+    const t=p.type||'Outro';
+    if(!groups[t])groups[t]={value:0,count:0};
+    groups[t].value+=p.market;
+    groups[t].count+=1;
+  }
+  const entries=Object.entries(groups).sort((a,b)=>b[1].value-a[1].value);
+
+  let cumulative=0,segments='',legend='';
+  for(const [type,data] of entries){
+    const pctVal=(data.value/total)*100;
+    const color=COLOR_MAP[type]||COLOR_MAP['Outro'];
+    segments+=`<circle cx="21" cy="21" r="15.9155" fill="none" stroke="${color}" stroke-width="4.5"
+      stroke-dasharray="${pctVal} ${100-pctVal}" stroke-dashoffset="${-cumulative}"/>`;
+    cumulative+=pctVal;
+    legend+=`<div class="legend-item">
+      <div class="legend-dot" style="background:${color};color:${color}"></div>
+      <div class="legend-info">
+        <div class="legend-label">${esc(type)}</div>
+        <div class="legend-meta">${data.count} ativo${data.count>1?'s':''}</div>
+      </div>
+      <div>
+        <div class="legend-value">${brl(data.value)}</div>
+        <div class="legend-pct">${pctVal.toFixed(1)}%</div>
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML=`
+    <div class="alloc-card">
+      <div class="alloc-title">Alocação por classe</div>
+      <div class="alloc-body">
+        <div class="donut-wrapper">
+          <svg viewBox="0 0 42 42" class="donut">
+            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="4.5"/>
+            <g transform="rotate(-90 21 21)">${segments}</g>
+          </svg>
+        </div>
+        <div class="alloc-legend">${legend}</div>
+      </div>
+    </div>
+  `;
+}
+
 function render(){
   const ps=positions();
   const total=ps.reduce((s,p)=>s+p.market,0);
@@ -117,6 +177,8 @@ function render(){
   const dt=computeDividendTotals();
   $('divMonth').textContent=brl(dt.month);
   $('divYear').textContent=brl(dt.year);
+
+  renderAllocation(ps);
 
   $('assets').innerHTML=ps.length?ps.map(p=>{
     const pos=p.unrealized>=0;
@@ -149,7 +211,6 @@ function render(){
 
   renderTradeHistory();
   renderDivHistory();
-  $('apiKeyInput').value=(state.apiKey&&state.apiKey!==DEFAULT_API_KEY)?state.apiKey:'';
   $('autoRefreshSelect').value=String(state.autoRefresh||0);
 }
 
@@ -396,18 +457,6 @@ $('divForm').addEventListener('submit',e=>{
   $('divFormBox').classList.add('hidden');
 });
 
-$('saveApiKey').addEventListener('click',()=>{
-  const k=$('apiKeyInput').value.trim();
-  if(!k){alert('Cole uma chave válida.');return}
-  state.apiKey=k;save();alert('Chave pessoal salva.');
-});
-
-$('removeApiKey').addEventListener('click',()=>{
-  if(confirm('Voltar para a chave padrão do app?')){
-    state.apiKey=DEFAULT_API_KEY;save();alert('Usando a chave padrão do app.');
-  }
-});
-
 $('autoRefreshSelect').addEventListener('change',e=>{
   state.autoRefresh=Number(e.target.value);save();setupAutoRefresh();
 });
@@ -424,7 +473,8 @@ function setupAutoRefresh(){
 }
 
 $('exportBtn').addEventListener('click',()=>{
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const exportState={...state,apiKey:undefined};
+  const blob=new Blob([JSON.stringify(exportState,null,2)],{type:'application/json'});
   const u=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=u;a.download='enyao-backup.json';a.click();URL.revokeObjectURL(u);
 });
@@ -434,13 +484,11 @@ $('importFile').addEventListener('change',async e=>{
   try{
     const d=JSON.parse(await f.text());
     if(d.trades&&Array.isArray(d.trades)){
-      const keepApi=state.apiKey;
       if(Array.isArray(d.catalog))state.catalog=d.catalog;
       if(Array.isArray(d.trades))state.trades=d.trades;
       if(Array.isArray(d.dividends))state.dividends=d.dividends;
       if(d.prices&&typeof d.prices==='object')state.prices=d.prices;
       if(d.lastUpdated)state.lastUpdated=d.lastUpdated;
-      state.apiKey=d.apiKey||keepApi;
       save();alert('Backup importado.');
     }else alert('Formato não reconhecido.');
   }catch(err){alert('Não foi possível ler esse arquivo JSON.')}
