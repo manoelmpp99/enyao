@@ -234,6 +234,57 @@
   </div>
 </div>
 
-<script src="app.js?v=18"></script>
+<!-- Tela de detalhe do ativo -->
+<div id="assetDetail" class="asset-detail hidden">
+  <div class="ad-header">
+    <button type="button" class="ad-back" onclick="closeAssetDetail()">←</button>
+    <div class="ad-header-info">
+      <div class="ad-ticker" id="adTicker">—</div>
+      <div class="ad-name" id="adName"></div>
+    </div>
+    <span class="pill" id="adType"></span>
+  </div>
+  <div class="ad-body">
+    <div class="ad-hero">
+      <div class="ad-hero-label">Valor atual</div>
+      <div class="ad-hero-value" id="adValue">R$ 0,00</div>
+      <div class="ad-hero-pct" id="adValuePct"></div>
+    </div>
+
+    <div class="ad-grid">
+      <div class="ad-stat"><div class="ad-stat-l" id="adAvgLabel">Preço médio</div><div class="ad-stat-v" id="adAvg">—</div></div>
+      <div class="ad-stat"><div class="ad-stat-l">Quantidade</div><div class="ad-stat-v" id="adQty">—</div></div>
+      <div class="ad-stat"><div class="ad-stat-l">Resultado</div><div class="ad-stat-v" id="adResult">—</div></div>
+      <div class="ad-stat"><div class="ad-stat-l">Proventos 12m</div><div class="ad-stat-v" id="adDiv12m">—</div></div>
+    </div>
+
+    <div class="ad-section">
+      <div class="ad-section-title">Preço (últimos 3 meses)</div>
+      <div class="ad-chart-wrap">
+        <svg id="adChart" class="ad-chart" viewBox="0 0 100 40" preserveAspectRatio="none"></svg>
+        <div class="ad-chart-loading" id="adChartLoading">Carregando…</div>
+      </div>
+    </div>
+
+    <div class="ad-section">
+      <div class="ad-section-title">Minhas operações</div>
+      <div id="adTrades"></div>
+    </div>
+
+    <div class="ad-section">
+      <div class="ad-section-title">Proventos recebidos</div>
+      <div id="adDividends"></div>
+    </div>
+
+    <div class="ad-actions">
+      <button type="button" class="primary" onclick="adActionBuy()">+ Comprar mais</button>
+      <button type="button" class="ghost" onclick="adActionSell()">Vender / Resgatar</button>
+      <button type="button" class="ghost" onclick="adActionProvento()">Registrar provento</button>
+      <button type="button" class="ghost danger-ghost" onclick="adActionRemove()">Remover ativo</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js?v=19"></script>
 </body>
 </html>
