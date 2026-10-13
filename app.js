@@ -1,4 +1,4 @@
-/* === PAINEL DE ERRO VISÍVEL (só aparece se algo quebrar) === */
+/* === PAINEL DE ERRO VISÍVEL === */
 (function(){
   function showErr(msg){
     var b=document.getElementById('__err');
@@ -25,246 +25,60 @@ const baseCatalog = [
 ].map(([ticker, name, type]) => ({ ticker, name, type, custom: false }));
 
 const NAME_TO_TICKER = {
-  // ---------- FIIs ----------
-  'MAXI REN': 'MXRF11',
-  'REC RECE': 'RECR11',
-  'REC REC': 'RECR11',
-  'REC RECEBIVEIS': 'RECR11',
-  'RBRR PAX': 'RBRP11',
-  'RBR PAX': 'RBRP11',
-  'RBR PROP': 'RBRP11',
-  'RBR PROPERTIES': 'RBRP11',
-  'RBR ALPHA': 'RBRF11',
-  'RBR LOG': 'RBRS11',
-  'TRX REAL': 'TRXF11',
-  'HGLG': 'HGLG11',
-  'VISC': 'VISC11',
-  'XPML': 'XPML11',
-  'XP MALLS': 'XPML11',
-  'KNRI': 'KNRI11',
-  'KINEA REND': 'KNRI11',
-  'GARE': 'GARE11',
-  'GUARDIAN': 'GARE11',
-  'LIFE': 'LIFE11',
-  'XPCA': 'XPCA11',
-  'FGAA': 'FGAA11',
-  'FG AGRO': 'FGAA11',
-  'AAZQ': 'AAZQ11',
-  'AZ QUEST': 'AAZQ11',
-  'IRIM': 'IRIM11',
-  'IRIDIUM': 'IRIM11',
-  'KNCR': 'KNCR11',
-  'KNIP': 'KNIP11',
-  'HGRU': 'HGRU11',
-  'XPLG': 'XPLG11',
-  'XP LOG': 'XPLG11',
-  'BRCO': 'BRCO11',
-  'BRESCO': 'BRCO11',
-  'BTLG': 'BTLG11',
-  'BTG LOG': 'BTLG11',
-  'VILG': 'VILG11',
-  'VINCI LOG': 'VILG11',
-  'JSRE': 'JSRE11',
-  'JS REAL': 'JSRE11',
-  'CPTS': 'CPTS11',
-  'CAPITANIA': 'CPTS11',
-  'DEVA': 'DEVA11',
-  'DEVANT': 'DEVA11',
-  'VGHF': 'VGHF11',
-  'MALL': 'MALL11',
-  'HSML': 'HSML11',
-  'H SIERRA': 'HSML11',
-  'BBRC': 'BBRC11',
-  'BB RENDA': 'BBRC11',
-  'SNFF': 'SNFF11',
-  'RECT': 'RECT11',
-  'RVBI': 'RVBI11',
-  'FEXC': 'FEXC11',
-  'GGRC': 'GGRC11',
-  'HCTR': 'HCTR11',
-  'HECTARE': 'HCTR11',
-  'URPR': 'URPR11',
-  'URCA': 'URPR11',
-  'MGFF': 'MGFF11',
-  'XPCI': 'XPCI11',
-  'AEFI': 'AEFI11',
-  'BCRI': 'BCRI11',
-  'BLMR': 'BLMR11',
-  'CACG': 'CACG11',
-  'CCME': 'CCME11',
-  'CEGR': 'CEGR11',
-  'CRIH': 'CRIH11',
-  'FAMB': 'FAMB11',
-  'FVPQ': 'FVPQ11',
-  'GRLV': 'GRLV11',
-  'HCCI': 'HCCI11',
-  'HTMX': 'HTMX11',
-  'KFOF': 'KFOF11',
-  'KNHY': 'KNHY11',
-  'KINEA H': 'KNHY11',
-  'LGCP': 'LGCP11',
-  'LOGCP': 'LGCP11',
-  'MCHF': 'MCHF11',
-  'MFAI': 'MFAI11',
-  'MORE': 'MORE11',
-  'NVHO': 'NVHO11',
-  'ONEF': 'ONEF11',
-  'PATL': 'PATL11',
-  'PATRIA': 'PATL11',
-  'PLCR': 'PLCR11',
-  'PQDP': 'PQDP11',
-  'RBCO': 'RBCO11',
-  'RBRD': 'RBRD11',
-  'RELG': 'RELG11',
-  'RZAK': 'RZAK11',
-  'RZTR': 'RZTR11',
-  'SARE': 'SARE11',
-  'SCJR': 'SCJR11',
-  'SDIL': 'SDIL11',
-  'SNCI': 'SNCI11',
-  'SNID': 'SNID11',
-  'TEPP': 'TEPP11',
-  'TGAR': 'TGAR11',
-  'TRNO': 'TRNO11',
-  'VCJR': 'VCJR11',
-  'VCRR': 'VCRR11',
-  'VINO': 'VINO11',
-  'VRTA': 'VRTA11',
-  'VSHO': 'VSHO11',
-  'VTLT': 'VTLT11',
-  'XPPR': 'XPPR11',
-  'XP PROP': 'XPPR11',
-  'RBR DESENV': 'RBRD11',
-  'RBR DESENV.': 'RBRD11',
-  'FII REC': 'RECR11',
-  'FII MAXI': 'MXRF11',
-  'FII TRX': 'TRXF11',
-  'FII RBRR': 'RBRP11',
-  'FII RBR': 'RBRF11',
-  'FII XPML': 'XPML11',
-  'FII VISC': 'VISC11',
-  'FII HGLG': 'HGLG11',
-  'FII KNRI': 'KNRI11',
-  'FII XPLG': 'XPLG11',
-  'FII VILG': 'VILG11',
-  'FII BTLG': 'BTLG11',
-  'FII BRCO': 'BRCO11',
-  'FII HGRU': 'HGRU11',
-  'FII KNCR': 'KNCR11',
-  'FII KNIP': 'KNIP11',
-  'FII RECR': 'RECR11',
-  'FII IRIM': 'IRIM11',
-  'FII JSRE': 'JSRE11',
-  'FII CPTS': 'CPTS11',
-  'FII DEVA': 'DEVA11',
-  'FII GARE': 'GARE11',
-  'FII LIFE': 'LIFE11',
-  'FII FGAA': 'FGAA11',
-  'FII AAZQ': 'AAZQ11',
-  'FII XPCA': 'XPCA11',
-  // ---------- Ações ----------
-  'PETROBRAS PN': 'PETR4',
-  'PETROBRAS ON': 'PETR3',
-  'PETROBRAS': 'PETR4',
-  'PETROLEO BRAS': 'PETR4',
-  'VALE ON': 'VALE3',
-  'VALE': 'VALE3',
-  'ITAU UNIBANCO': 'ITUB4',
-  'ITAUUNIBANCO': 'ITUB4',
-  'ITAU SA': 'ITSA4',
-  'ITAUSA': 'ITSA4',
-  'BRADESCO PN': 'BBDC4',
-  'BRADESCO ON': 'BBDC3',
-  'BRADESCO': 'BBDC4',
-  'BANCO DO BRASIL': 'BBAS3',
-  'BB SEGURIDADE': 'BBSE3',
-  'WEG ON': 'WEGE3',
-  'WEG': 'WEGE3',
-  'AMBEV': 'ABEV3',
-  'MAGAZINE LUIZA': 'MGLU3',
-  'MAGALU': 'MGLU3',
-  'LOJAS RENNER': 'LREN3',
-  'RENNER': 'LREN3',
-  'LOCALIZA': 'RENT3',
-  'SUZANO': 'SUZB3',
-  'ELETROBRAS ON': 'ELET3',
-  'ELETROBRAS PNB': 'ELET6',
-  'ELETROBRAS': 'ELET3',
-  'CEMIG PN': 'CMIG4',
-  'CEMIG': 'CMIG4',
-  'SANTANDER': 'SANB11',
-  'B3 ON': 'B3SA3',
-  'B3 SA': 'B3SA3',
-  'RUMO ON': 'RAIL3',
-  'RUMO': 'RAIL3',
-  'COSAN ON': 'CSAN3',
-  'COSAN': 'CSAN3',
-  'EQUATORIAL': 'EQTL3',
-  'TAESA': 'TAEE11',
-  'ENGIE BRASIL': 'EGIE3',
-  'ENGIE': 'EGIE3',
-  'REDE DOR': 'RDOR3',
-  'REDE D OR': 'RDOR3',
-  'HAPVIDA': 'HAPV3',
-  'NATURA': 'NTCO3',
-  'TIM ON': 'TIMS3',
-  'TIM S.A': 'TIMS3',
-  'TIM SA': 'TIMS3',
-  'TELEFONICA': 'VIVT3',
-  'VIVO': 'VIVT3',
-  'ULTRAPAR': 'UGPA3',
-  'CYRELA': 'CYRE3',
-  'MRV ON': 'MRVE3',
-  'MRV': 'MRVE3',
-  'GERDAU MET': 'GOAU4',
-  'GERDAU PN': 'GGBR4',
-  'GERDAU': 'GGBR4',
-  'CSN ON': 'CSNA3',
-  'CSN': 'CSNA3',
-  'SABESP': 'SBSP3',
-  'COPEL': 'CPLE6',
-  'RAIA DROGASIL': 'RADL3',
-  'RAIADROGASIL': 'RADL3',
-  'FLEURY': 'FLRY3',
-  'BRF SA': 'BRFS3',
-  'MARFRIG': 'MRFG3',
-  'JBS': 'JBSS3',
-  'MINERVA': 'BEEF3',
-  'OCEANPACT': 'OPCT3',
-  'CAIXA SEGURIDADE': 'CXSE3',
-  'CAIXA SEG': 'CXSE3',
-  'SABESP ON': 'SBSP3',
-  'LIGHT': 'LIGT3',
-  'USIMINAS': 'USIM5',
-  'KLABIN': 'KLBN4',
-  'TELEF BRASIL': 'VIVT3',
-  // ---------- ETFs ----------
-  'ISHARES S&P': 'IVVB11',
-  'S&P 500': 'IVVB11',
-  'IVVB': 'IVVB11',
-  'ISHARES IBOVESPA': 'BOVA11',
-  'IBOVESPA': 'BOVA11',
-  'BOVA': 'BOVA11',
-  'ISHARES SMALL': 'SMAL11',
-  'SMALL CAP': 'SMAL11',
-  'IT NOW IDIV': 'DIVO11',
-  'INVESTO TESOURO': 'LFTS11',
-  'NU ETF': 'NDIV11',
-  'HASHDEX': 'HASH11',
-  'QR BITCOIN': 'QBTC11',
-  'TREND OURO': 'GOLD11',
-  'TREND CHINA': 'XINA11',
-  'TREND FIXA': 'FIXA11'
+  'MAXI REN':'MXRF11','REC RECE':'RECR11','REC REC':'RECR11','REC RECEBIVEIS':'RECR11',
+  'RBRR PAX':'RBRP11','RBR PAX':'RBRP11','RBR PROPERTIES':'RBRP11','RBR ALPHA':'RBRF11','RBR LOG':'RBRS11',
+  'TRX REAL':'TRXF11','HGLG':'HGLG11','VISC':'VISC11','XPML':'XPML11','XP MALLS':'XPML11',
+  'KNRI':'KNRI11','KINEA REND':'KNRI11','GARE':'GARE11','GUARDIAN':'GARE11','LIFE':'LIFE11',
+  'XPCA':'XPCA11','FGAA':'FGAA11','FG AGRO':'FGAA11','AAZQ':'AAZQ11','AZ QUEST':'AAZQ11',
+  'IRIM':'IRIM11','IRIDIUM':'IRIM11','KNCR':'KNCR11','KNIP':'KNIP11','HGRU':'HGRU11',
+  'XPLG':'XPLG11','XP LOG':'XPLG11','BRCO':'BRCO11','BRESCO':'BRCO11','BTLG':'BTLG11','BTG LOG':'BTLG11',
+  'VILG':'VILG11','VINCI LOG':'VILG11','JSRE':'JSRE11','JS REAL':'JSRE11','CPTS':'CPTS11','CAPITANIA':'CPTS11',
+  'DEVA':'DEVA11','DEVANT':'DEVA11','VGHF':'VGHF11','MALL':'MALL11','HSML':'HSML11','H SIERRA':'HSML11',
+  'BBRC':'BBRC11','BB RENDA':'BBRC11','SNFF':'SNFF11','RECT':'RECT11','RVBI':'RVBI11','FEXC':'FEXC11',
+  'GGRC':'GGRC11','HCTR':'HCTR11','HECTARE':'HCTR11','URPR':'URPR11','URCA':'URPR11','MGFF':'MGFF11',
+  'XPCI':'XPCI11','AEFI':'AEFI11','BCRI':'BCRI11','BLMR':'BLMR11','CACG':'CACG11','CCME':'CCME11',
+  'CEGR':'CEGR11','CRIH':'CRIH11','FAMB':'FAMB11','FVPQ':'FVPQ11','GRLV':'GRLV11','HCCI':'HCCI11',
+  'HTMX':'HTMX11','KFOF':'KFOF11','KNHY':'KNHY11','KINEA H':'KNHY11','LGCP':'LGCP11','LOGCP':'LGCP11',
+  'MCHF':'MCHF11','MFAI':'MFAI11','MORE':'MORE11','NVHO':'NVHO11','ONEF':'ONEF11','PATL':'PATL11',
+  'PATRIA':'PATL11','PLCR':'PLCR11','PQDP':'PQDP11','RBCO':'RBCO11','RBRD':'RBRD11','RELG':'RELG11',
+  'RZAK':'RZAK11','RZTR':'RZTR11','SARE':'SARE11','SCJR':'SCJR11','SDIL':'SDIL11','SNCI':'SNCI11',
+  'SNID':'SNID11','TEPP':'TEPP11','TGAR':'TGAR11','TRNO':'TRNO11','VCJR':'VCJR11','VCRR':'VCRR11',
+  'VINO':'VINO11','VRTA':'VRTA11','VSHO':'VSHO11','VTLT':'VTLT11','XPPR':'XPPR11','XP PROP':'XPPR11',
+  'RBR DESENV':'RBRD11',
+  'FII REC':'RECR11','FII MAXI':'MXRF11','FII TRX':'TRXF11','FII RBRR':'RBRP11','FII RBR':'RBRF11',
+  'FII XPML':'XPML11','FII VISC':'VISC11','FII HGLG':'HGLG11','FII KNRI':'KNRI11','FII XPLG':'XPLG11',
+  'FII VILG':'VILG11','FII BTLG':'BTLG11','FII BRCO':'BRCO11','FII HGRU':'HGRU11','FII KNCR':'KNCR11',
+  'FII KNIP':'KNIP11','FII RECR':'RECR11','FII IRIM':'IRIM11','FII JSRE':'JSRE11','FII CPTS':'CPTS11',
+  'FII DEVA':'DEVA11','FII GARE':'GARE11','FII LIFE':'LIFE11','FII FGAA':'FGAA11','FII AAZQ':'AAZQ11',
+  'FII XPCA':'XPCA11',
+  'PETROBRAS PN':'PETR4','PETROBRAS ON':'PETR3','PETROBRAS':'PETR4','PETROLEO BRAS':'PETR4',
+  'VALE ON':'VALE3','VALE':'VALE3','ITAU UNIBANCO':'ITUB4','ITAUUNIBANCO':'ITUB4','ITAU SA':'ITSA4',
+  'ITAUSA':'ITSA4','BRADESCO PN':'BBDC4','BRADESCO ON':'BBDC3','BRADESCO':'BBDC4','BANCO DO BRASIL':'BBAS3',
+  'BB SEGURIDADE':'BBSE3','WEG ON':'WEGE3','WEG':'WEGE3','AMBEV':'ABEV3','MAGAZINE LUIZA':'MGLU3',
+  'MAGALU':'MGLU3','LOJAS RENNER':'LREN3','RENNER':'LREN3','LOCALIZA':'RENT3','SUZANO':'SUZB3',
+  'ELETROBRAS ON':'ELET3','ELETROBRAS PNB':'ELET6','ELETROBRAS':'ELET3','CEMIG PN':'CMIG4','CEMIG':'CMIG4',
+  'SANTANDER':'SANB11','B3 ON':'B3SA3','B3 SA':'B3SA3','RUMO ON':'RAIL3','RUMO':'RAIL3','COSAN ON':'CSAN3',
+  'COSAN':'CSAN3','EQUATORIAL':'EQTL3','TAESA':'TAEE11','ENGIE BRASIL':'EGIE3','ENGIE':'EGIE3',
+  'REDE DOR':'RDOR3','REDE D OR':'RDOR3','HAPVIDA':'HAPV3','NATURA':'NTCO3','TIM ON':'TIMS3',
+  'TIM S.A':'TIMS3','TIM SA':'TIMS3','TELEFONICA':'VIVT3','VIVO':'VIVT3','ULTRAPAR':'UGPA3',
+  'CYRELA':'CYRE3','MRV ON':'MRVE3','MRV':'MRVE3','GERDAU MET':'GOAU4','GERDAU PN':'GGBR4','GERDAU':'GGBR4',
+  'CSN ON':'CSNA3','CSN':'CSNA3','SABESP':'SBSP3','COPEL':'CPLE6','RAIA DROGASIL':'RADL3','RAIADROGASIL':'RADL3',
+  'FLEURY':'FLRY3','BRF SA':'BRFS3','MARFRIG':'MRFG3','JBS':'JBSS3','MINERVA':'BEEF3','OCEANPACT':'OPCT3',
+  'CAIXA SEGURIDADE':'CXSE3','CAIXA SEG':'CXSE3','LIGHT':'LIGT3','USIMINAS':'USIM5','KLABIN':'KLBN4',
+  'TELEF BRASIL':'VIVT3',
+  'ISHARES S&P':'IVVB11','S&P 500':'IVVB11','IVVB':'IVVB11','ISHARES IBOVESPA':'BOVA11','IBOVESPA':'BOVA11',
+  'BOVA':'BOVA11','ISHARES SMALL':'SMAL11','SMALL CAP':'SMAL11','IT NOW IDIV':'DIVO11','INVESTO TESOURO':'LFTS11',
+  'NU ETF':'NDIV11','HASHDEX':'HASH11','QR BITCOIN':'QBTC11','TREND OURO':'GOLD11','TREND CHINA':'XINA11','TREND FIXA':'FIXA11'
 };
 
-const COLOR_MAP = { 'Ação': '#ec4899', 'FII': '#22d3ee', 'ETF': '#a855f7', 'Renda fixa': '#10b981', 'Outro': '#64748b' };
+const COLOR_MAP = { 'Ação':'#ec4899', 'FII':'#22d3ee', 'ETF':'#a855f7', 'Renda fixa':'#10b981', 'Outro':'#64748b' };
 const RF_TICKERS = ['CDB','LCI','LCA','CRI','CRA','DEBENTURE','TESOURO SELIC','TESOURO IPCA','TESOURO PREFIXADO'];
 const isRFTicker = t => RF_TICKERS.includes(t);
 
 let state = {
   catalog: [], trades: [], dividends: [], prices: {},
   apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '',
-  cdiRate: 13.65, rfLastProjection: null, history: []
+  cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {}
 };
 try {
   const raw = localStorage.getItem(KEY);
@@ -280,6 +94,7 @@ try {
     if (typeof s.cdiRate === 'number' && s.cdiRate > 0) state.cdiRate = s.cdiRate;
     if (s.rfLastProjection) state.rfLastProjection = s.rfLastProjection;
     if (Array.isArray(s.history)) state.history = s.history;
+    if (s.priceHistory && typeof s.priceHistory === 'object') state.priceHistory = s.priceHistory;
   }
 } catch (e) { console.warn('Erro lendo estado', e); }
 state.apiKey = DEFAULT_API_KEY;
@@ -714,7 +529,7 @@ function renderIR() {
   container.innerHTML = html;
 }
 
-/* ---------- Parser de nota ---------- */
+/* ---------- Parser ---------- */
 function parseRowSinacor(line) {
   if (!line || line.length < 8) return null;
   const tickerM = line.match(/\b([A-Z]{4}\d{1,2})\b/);
@@ -909,7 +724,6 @@ async function extractPDFText(file) {
   return fullText;
 }
 
-/* ---------- Preview ---------- */
 let pendingImport = [];
 
 function renderImportPreview() {
@@ -917,7 +731,7 @@ function renderImportPreview() {
   if (!box) return;
   if (!pendingImport.length) {
     box.classList.remove('hidden');
-    box.innerHTML = `<div class="import-preview-card"><div class="import-preview-title">Nada reconhecido</div><div class="import-status err">Não identifiquei negócios nesse texto. Formatos aceitos: Itaú, Sinacor, CSV, ou <b>MXRF11 C 10 9,85</b>.</div></div>`;
+    box.innerHTML = `<div class="import-preview-card"><div class="import-preview-title">Nada reconhecido</div><div class="import-status err">Não identifiquei negócios nesse texto.</div></div>`;
     return;
   }
   const rows = pendingImport.map((r, i) => {
@@ -962,7 +776,7 @@ async function handlePDFUpload(file) {
     st.textContent = `✅ PDF lido (${text.length} caracteres). Analisando…`; st.className = 'import-status ok';
     const parsed = parseNotaText(text);
     if (!parsed.length) {
-      st.textContent = '⚠️ PDF lido, mas nenhum negócio reconhecido. Texto extraído abaixo.';
+      st.textContent = '⚠️ PDF lido, mas nenhum negócio reconhecido.';
       st.className = 'import-status err';
       if($('notaInput')) $('notaInput').value = text.slice(0, 3000);
       return;
@@ -976,6 +790,195 @@ async function handlePDFUpload(file) {
     st.className = 'import-status err';
   }
 }
+
+/* ============================================================
+   TELA DE DETALHE DO ATIVO
+   ============================================================ */
+function openAssetDetail(ticker) {
+  const p = positions().find(x => x.ticker === ticker);
+  if (!p) return;
+  const overlay = $('assetDetail');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  overlay.dataset.ticker = ticker;
+  document.body.style.overflow = 'hidden';
+
+  $('adTicker').textContent = displayTicker(ticker);
+  $('adName').textContent = p.name;
+  $('adType').textContent = p.type;
+  $('adValue').textContent = brl(p.market);
+
+  const pos = p.unrealized >= 0;
+  $('adValuePct').textContent = (pos ? '+' : '') + brl(p.unrealized) + '  ·  ' + pct(p.unrealizedPct);
+
+  $('adAvgLabel').textContent = p.isRF ? 'Valor aplicado' : 'Preço médio';
+  $('adAvg').textContent = p.isRF ? brl(p.cost) : brl(p.avg);
+  $('adQty').textContent = p.isRF ? '—' : qtyToBR(p.qty);
+  $('adResult').textContent = (pos ? '+' : '') + brl(p.unrealized);
+  $('adResult').style.color = pos ? 'var(--success)' : 'var(--danger)';
+  $('adDiv12m').textContent = p.div12m > 0 ? brl(p.div12m) : '—';
+  $('adDiv12m').style.color = 'var(--cyan)';
+
+  // operações
+  const trades = state.trades.filter(t => t.ticker === ticker).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  if (trades.length) {
+    $('adTrades').innerHTML = trades.map(t => {
+      const isBuy = t.side === 'buy';
+      const isRF = isRFAsset(t.ticker);
+      const label = isRF ? (isBuy ? 'Aplicação' : 'Resgate') : (isBuy ? 'Compra' : 'Venda');
+      const detail = isRF ? brl(Math.abs(t.qty * t.price)) : qtyToBR(t.qty) + ' × ' + brl(t.price);
+      const total = Math.abs(t.qty * t.price) + (t.fees || 0);
+      return `<div class="ad-trade-row">
+        <div>
+          <span class="ad-badge ${isBuy ? 'buy' : 'sell'}">${label}</span>
+          <div class="meta">${esc(t.date)}</div>
+        </div>
+        <div class="value">
+          ${brl(total)}
+          <small>${detail}</small>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    $('adTrades').innerHTML = '<div class="empty" style="padding:14px">Nenhuma operação registrada.</div>';
+  }
+
+  // proventos
+  const divs = state.dividends.filter(d => d.ticker === ticker).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  if (divs.length) {
+    $('adDividends').innerHTML = divs.map(d => `
+      <div class="ad-trade-row">
+        <div>
+          <span class="ad-badge buy">${esc(d.kind || 'Dividendo')}</span>
+          <div class="meta">${esc(d.date)}</div>
+        </div>
+        <div class="value">${brl(d.amount)}</div>
+      </div>
+    `).join('');
+  } else {
+    $('adDividends').innerHTML = '<div class="empty" style="padding:14px">Nenhum provento registrado.</div>';
+  }
+
+  loadAssetChart(ticker);
+}
+
+window.closeAssetDetail = function() {
+  $('assetDetail')?.classList.add('hidden');
+  document.body.style.overflow = '';
+};
+
+async function fetchPriceHistory(ticker) {
+  if (!state.priceHistory) state.priceHistory = {};
+  const cached = state.priceHistory[ticker];
+  if (cached && cached.ts && (Date.now() - cached.ts) < 3600000) return cached.data;
+  try {
+    const url = 'https://brapi.dev/api/quote/' + encodeURIComponent(ticker)
+      + '?range=3mo&interval=1d&token=' + encodeURIComponent(state.apiKey);
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const hist = j?.results?.[0]?.historicalDataPrice;
+    if (!Array.isArray(hist) || !hist.length) return null;
+    state.priceHistory[ticker] = { ts: Date.now(), data: hist };
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    return hist;
+  } catch (e) { return null; }
+}
+
+async function loadAssetChart(ticker) {
+  const svg = $('adChart');
+  const loading = $('adChartLoading');
+  if (!svg || !loading) return;
+  svg.innerHTML = '';
+  loading.style.display = 'flex';
+  loading.textContent = 'Carregando…';
+
+  if (isRFAsset(ticker)) {
+    loading.textContent = 'Renda fixa não tem gráfico de preço';
+    return;
+  }
+
+  const hist = await fetchPriceHistory(ticker);
+  loading.style.display = 'none';
+
+  if (!hist || hist.length < 2) {
+    svg.innerHTML = '<text x="50" y="20" text-anchor="middle" fill="#8a8a9c" font-size="3.5">Sem histórico disponível</text>';
+    return;
+  }
+
+  const prices = hist.map(h => Number(h.close)).filter(p => Number.isFinite(p) && p > 0);
+  if (prices.length < 2) {
+    svg.innerHTML = '<text x="50" y="20" text-anchor="middle" fill="#8a8a9c" font-size="3.5">Sem dados suficientes</text>';
+    return;
+  }
+
+  const w = 100, height = 40, padY = 2.5;
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = (max - min) || 1;
+  const first = prices[0], last = prices[prices.length - 1];
+  const positive = last >= first;
+
+  let linePath = '', areaPath = '';
+  prices.forEach((price, i) => {
+    const x = (i / (prices.length - 1)) * w;
+    const y = height - padY - ((price - min) / range) * (height - padY * 2);
+    if (i === 0) { linePath += `M ${x} ${y}`; areaPath += `M ${x} ${height} L ${x} ${y}`; }
+    else { linePath += ` L ${x} ${y}`; areaPath += ` L ${x} ${y}`; }
+    if (i === prices.length - 1) areaPath += ` L ${x} ${height} Z`;
+  });
+
+  const c1 = positive ? '#22d3ee' : '#ff4d80';
+  const c2 = positive ? '#ec4899' : '#a855f7';
+  const uid = 'adc' + Date.now();
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="${uid}-line" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="${c2}"/>
+        <stop offset="100%" stop-color="${c1}"/>
+      </linearGradient>
+      <linearGradient id="${uid}-fill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${c1}" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="${c1}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#${uid}-fill)"/>
+    <path d="${linePath}" fill="none" stroke="url(#${uid}-line)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+  `;
+}
+
+window.adActionBuy = function() {
+  const ticker = $('assetDetail')?.dataset.ticker;
+  if (!ticker) return;
+  closeAssetDetail();
+  window.showTab('trade');
+  const base = isRFComposite(ticker) ? rfBase(ticker) : ticker;
+  const a = catalogEntry(ticker) || { ticker: base, name: base, type: isRFAsset(ticker) ? 'Renda fixa' : 'Outro' };
+  setTimeout(() => {
+    choose(a, false);
+    if (isRFComposite(ticker) && $('tradeRFPct')) $('tradeRFPct').value = String(rfPct(ticker));
+  }, 100);
+};
+window.adActionSell = function() {
+  const ticker = $('assetDetail')?.dataset.ticker;
+  if (!ticker) return;
+  closeAssetDetail();
+  const isRF = isRFAsset(ticker);
+  setTimeout(() => { isRF ? window.openRedeem(ticker) : window.openSell(ticker); }, 100);
+};
+window.adActionProvento = function() {
+  const ticker = $('assetDetail')?.dataset.ticker;
+  if (!ticker) return;
+  closeAssetDetail();
+  setTimeout(() => window.showProvento(ticker), 100);
+};
+window.adActionRemove = function() {
+  const ticker = $('assetDetail')?.dataset.ticker;
+  if (!ticker) return;
+  closeAssetDetail();
+  setTimeout(() => window.removePosition(ticker), 100);
+};
 
 /* ---------- Render principal ---------- */
 function render() {
@@ -1003,20 +1006,31 @@ function render() {
     const yocText = p.div12m > 0 ? pct(p.yoc) : '—';
     const displayName = displayTicker(p.ticker);
     const cdiTag = p.isRF && rfPct(p.ticker) !== 100 ? `<span class="pill pill-cdi">${rfPct(p.ticker)}% CDI</span>` : '';
+    const safeTicker = esc(p.ticker).replace(/'/g, "\\'");
     if (p.isRF) {
       const cdiInfo = `CDI ${rfPct(p.ticker)}% · Taxa ${state.cdiRate.toFixed(2)}% a.a.`;
-      return `<div class="asset">
+      return `<div class="asset clickable" onclick="openAssetDetail('${safeTicker}')">
         <div class="assetTop"><div><div class="ticker">${esc(displayName)} <span class="pill">${esc(p.type)}</span> ${cdiTag}</div><div class="small">${esc(p.name)}</div></div><div class="right"><strong>${brl(p.market)}</strong><div class="small">Saldo atual</div></div></div>
         <div class="sub-grid"><div><div class="sub-label">Valor aplicado</div><div class="sub-value">${brl(p.cost)}</div></div><div><div class="sub-label">Rentabilidade</div><div class="sub-value" style="color:${pos ? 'var(--success)' : 'var(--danger)'}">${pct(p.unrealizedPct)}</div></div><div><div class="sub-label">Resultado</div><div class="sub-value" style="color:${pos ? 'var(--success)' : 'var(--danger)'}">${pos ? '+' : ''}${brl(p.unrealized)}</div></div><div><div class="sub-label">Proventos 12m</div><div class="sub-value" style="color:var(--cyan)">${p.div12m > 0 ? brl(p.div12m) : '—'}</div></div></div>
         <div class="yoc-line"><span>${cdiInfo}</span><b>${yocText}</b></div>
-        <div class="actions"><button type="button" class="ghost-sm" onclick="updatePrice('${esc(p.ticker)}')">Atualizar saldo</button><button type="button" class="ghost-sm" onclick="openRedeem('${esc(p.ticker)}')">Resgatar</button><button type="button" class="ghost-sm" onclick="showProvento('${esc(p.ticker)}')">Provento</button><button type="button" class="ghost-sm danger-ghost" onclick="removePosition('${esc(p.ticker)}')">Remover</button></div>
+        <div class="actions" onclick="event.stopPropagation()">
+          <button type="button" class="ghost-sm" onclick="event.stopPropagation();updatePrice('${safeTicker}')">Atualizar saldo</button>
+          <button type="button" class="ghost-sm" onclick="event.stopPropagation();openRedeem('${safeTicker}')">Resgatar</button>
+          <button type="button" class="ghost-sm" onclick="event.stopPropagation();showProvento('${safeTicker}')">Provento</button>
+          <button type="button" class="ghost-sm danger-ghost" onclick="event.stopPropagation();removePosition('${safeTicker}')">Remover</button>
+        </div>
       </div>`;
     }
-    return `<div class="asset">
+    return `<div class="asset clickable" onclick="openAssetDetail('${safeTicker}')">
       <div class="assetTop"><div><div class="ticker">${esc(displayName)} <span class="pill">${esc(p.type)}</span></div><div class="small">${esc(p.name)} · ${qtyToBR(p.qty)} un.</div></div><div class="right"><strong>${brl(p.market)}</strong><div class="small">Atual ${brl(p.current)}</div></div></div>
       <div class="sub-grid"><div><div class="sub-label">Preço médio</div><div class="sub-value">${brl(p.avg)}</div></div><div><div class="sub-label">Rentabilidade</div><div class="sub-value" style="color:${pos ? 'var(--success)' : 'var(--danger)'}">${pct(p.unrealizedPct)}</div></div><div><div class="sub-label">Resultado</div><div class="sub-value" style="color:${pos ? 'var(--success)' : 'var(--danger)'}">${pos ? '+' : ''}${brl(p.unrealized)}</div></div><div><div class="sub-label">Proventos 12m</div><div class="sub-value" style="color:var(--cyan)">${p.div12m > 0 ? brl(p.div12m) : '—'}</div></div></div>
       <div class="yoc-line"><span>YOC 12m (sobre preço médio)</span><b>${yocText}</b></div>
-      <div class="actions"><button type="button" class="ghost-sm" onclick="updatePrice('${esc(p.ticker)}')">Editar preço</button><button type="button" class="ghost-sm" onclick="openSell('${esc(p.ticker)}')">Vender</button><button type="button" class="ghost-sm" onclick="showProvento('${esc(p.ticker)}')">Provento</button><button type="button" class="ghost-sm danger-ghost" onclick="removePosition('${esc(p.ticker)}')">Remover</button></div>
+      <div class="actions" onclick="event.stopPropagation()">
+        <button type="button" class="ghost-sm" onclick="event.stopPropagation();updatePrice('${safeTicker}')">Editar preço</button>
+        <button type="button" class="ghost-sm" onclick="event.stopPropagation();openSell('${safeTicker}')">Vender</button>
+        <button type="button" class="ghost-sm" onclick="event.stopPropagation();showProvento('${safeTicker}')">Provento</button>
+        <button type="button" class="ghost-sm danger-ghost" onclick="event.stopPropagation();removePosition('${safeTicker}')">Remover</button>
+      </div>
     </div>`;
   }).join('') : '<div class="empty">Nenhuma posição ainda.<br>Toque em <b>Operar</b> para registrar a primeira compra.</div>';
 
@@ -1123,6 +1137,7 @@ window.removePosition = function(ticker) {
   state.trades = state.trades.filter(t => t.ticker !== ticker);
   state.dividends = state.dividends.filter(d => d.ticker !== ticker);
   delete state.prices[ticker];
+  if (state.priceHistory) delete state.priceHistory[ticker];
   save();
   alert('Investimento removido.');
 };
@@ -1221,7 +1236,6 @@ function openMoneyModal(title, defaultValue) {
   });
 }
 
-/* ---------- Eventos ---------- */
 ['tradePrice','tradeRFValue','fees','divAmount','modalInput','cdiRateInput','sellPrice','sellFees','redeemValue'].forEach(id => { const el = $(id); if (el) attachMoneyMask(el); });
 
 $('addSaldoBtn')?.addEventListener('click', () => window.addSaldo());
@@ -1347,7 +1361,7 @@ function setupAutoRefresh() {
 }
 
 $('exportBtn')?.addEventListener('click', () => {
-  const exportState = { ...state, apiKey: undefined };
+  const exportState = { ...state, apiKey: undefined, priceHistory: undefined };
   const blob = new Blob([JSON.stringify(exportState, null, 2)], { type: 'application/json' });
   const u = URL.createObjectURL(blob), a = document.createElement('a');
   a.href = u; a.download = 'enyao-backup.json'; a.click(); URL.revokeObjectURL(u);
@@ -1382,7 +1396,7 @@ $('diagBtn')?.addEventListener('click', () => {
 
 $('clearBtn')?.addEventListener('click', () => {
   if (confirm('Apagar todos os dados deste aparelho?')) {
-    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [] };
+    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {} };
     save();
   }
 });
