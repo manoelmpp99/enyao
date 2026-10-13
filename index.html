@@ -50,16 +50,21 @@
 
   <section class="section hidden" id="trade">
     <div class="saldo-card">
-      <div class="saldo-label">Saldo disponível para investir</div>
-      <div class="saldo-valor" id="saldoDisponivel">R$ 0,00</div>
-      <div class="saldo-actions">
-        <button type="button" class="saldo-btn" id="addSaldoBtn">+ Adicionar saldo</button>
-        <button type="button" class="saldo-btn" id="removeSaldoBtn">− Remover saldo</button>
+      <div class="saldo-card-inner">
+        <div class="saldo-icon">💰</div>
+        <div class="saldo-content">
+          <div class="saldo-label">Saldo disponível</div>
+          <div class="saldo-valor" id="saldoDisponivel">R$ 0,00</div>
+          <div class="saldo-hint">Aguardando ser investido</div>
+        </div>
       </div>
-      <p class="notice" style="margin-top:10px">Esse é o dinheiro que você tem na corretora aguardando ser investido. Ele não conta no patrimônio até você comprar algo.</p>
+      <div class="saldo-actions">
+        <button type="button" class="saldo-btn" id="addSaldoBtn"><span>+</span> Adicionar</button>
+        <button type="button" class="saldo-btn" id="removeSaldoBtn"><span>−</span> Remover</button>
+      </div>
     </div>
 
-    <h2 style="margin-top:22px">Registrar compra</h2>
+    <h2 style="margin-top:24px">Registrar compra</h2>
     <label for="assetSearch">Ativo</label>
     <input id="assetSearch" placeholder="Ticker ou nome…" autocomplete="off">
     <div id="suggestions" class="searchResults hidden"></div>
@@ -89,7 +94,7 @@
     </form>
 
     <h2 style="margin-top:28px">Importar nota de corretagem</h2>
-    <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>. O app reconhece vários padrões automaticamente.</p>
+    <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>.</p>
     <label for="notaPdf" style="margin-top:12px">Arquivo PDF</label>
     <input type="file" id="notaPdf" accept=".pdf,application/pdf">
     <div id="pdfStatus" class="import-status"></div>
@@ -229,6 +234,6 @@
   </div>
 </div>
 
-<script src="app.js?v=17"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>
