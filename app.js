@@ -14,8 +14,17 @@
 })();
 
 const DEFAULT_API_KEY = 'n2jSRHKNBe1nYrLza56x6n';
-const KEY = 'enyao-v02';
+const BASE_KEY = 'enyao-v02';
+const AUTH_KEY = 'enyao-auth-v01';
+const USERS_KEY = 'enyao-users-v01';
 const SALDO_TICKER = '__SALDO__';
+
+let authUser = null;
+
+function getKey() {
+  if (authUser && authUser.userId) return `${BASE_KEY}-u-${authUser.userId}`;
+  return BASE_KEY;
+}
 
 const baseCatalog = [
   ['MXRF11','Maxi Renda','FII'],['HGLG11','CSHG Logística','FII'],['VISC11','Vinci Shopping Centers','FII'],['XPML11','XP Malls','FII'],['KNRI11','Kinea Renda Imobiliária','FII'],['GARE11','Guardian Real Estate','FII'],['TRXF11','TRX Real Estate','FII'],['RECR11','FII REC Recebíveis Imobiliários','FII'],['LIFE11','Life Capital Partners','FII'],['XPCA11','XP Crédito Agrícola','FII'],['FGAA11','FG Agro','FII'],['AAZQ11','AZ Quest Sole','FII'],['IRIM11','Iridium Recebíveis Imobiliários','FII'],['KNCR11','Kinea Crédito Imobiliário','FII'],['KNIP11','Kinea Índices de Preços','FII'],['HGRU11','CSHG Renda Urbana','FII'],['XPLG11','XP Log','FII'],['BRCO11','Bresco Logística','FII'],['BTLG11','BTG Logística','FII'],['VILG11','Vinci Logística','FII'],['JSRE11','JS Real Estate','FII'],['RBRF11','RBR Alpha','FII'],['RBRP11','RBR Properties','FII'],['CPTS11','Capitânia Securities','FII'],['DEVA11','Devant Recebíveis','FII'],
@@ -75,33 +84,39 @@ const COLOR_MAP = { 'Ação':'#ec4899', 'FII':'#22d3ee', 'ETF':'#a855f7', 'BDR':
 const RF_TICKERS = ['CDB','LCI','LCA','CRI','CRA','DEBENTURE','TESOURO SELIC','TESOURO IPCA','TESOURO PREFIXADO'];
 const isRFTicker = t => RF_TICKERS.includes(t);
 
-let state = {
+const DEFAULT_STATE = () => ({
   catalog: [], trades: [], dividends: [], prices: {},
   apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '',
   cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {},
   goals: [], b3Catalog: [], b3CatalogSyncedAt: null
-};
-try {
-  const raw = localStorage.getItem(KEY);
-  const s = raw ? JSON.parse(raw) : null;
-  if (s && typeof s === 'object') {
-    if (Array.isArray(s.catalog)) state.catalog = s.catalog;
-    if (Array.isArray(s.trades)) state.trades = s.trades;
-    if (Array.isArray(s.dividends)) state.dividends = s.dividends;
-    if (s.prices && typeof s.prices === 'object') state.prices = s.prices;
-    if (s.lastUpdated) state.lastUpdated = s.lastUpdated;
-    if (typeof s.autoRefresh === 'number') state.autoRefresh = s.autoRefresh;
-    if (s.lastSource) state.lastSource = s.lastSource;
-    if (typeof s.cdiRate === 'number' && s.cdiRate > 0) state.cdiRate = s.cdiRate;
-    if (s.rfLastProjection) state.rfLastProjection = s.rfLastProjection;
-    if (Array.isArray(s.history)) state.history = s.history;
-    if (s.priceHistory && typeof s.priceHistory === 'object') state.priceHistory = s.priceHistory;
-    if (Array.isArray(s.goals)) state.goals = s.goals;
-    if (Array.isArray(s.b3Catalog)) state.b3Catalog = s.b3Catalog;
-    if (s.b3CatalogSyncedAt) state.b3CatalogSyncedAt = s.b3CatalogSyncedAt;
-  }
-} catch (e) { console.warn('Erro lendo estado', e); }
-state.apiKey = DEFAULT_API_KEY;
+});
+
+let state = DEFAULT_STATE();
+
+function loadStateForCurrentUser() {
+  state = DEFAULT_STATE();
+  try {
+    const raw = localStorage.getItem(getKey());
+    const s = raw ? JSON.parse(raw) : null;
+    if (s && typeof s === 'object') {
+      if (Array.isArray(s.catalog)) state.catalog = s.catalog;
+      if (Array.isArray(s.trades)) state.trades = s.trades;
+      if (Array.isArray(s.dividends)) state.dividends = s.dividends;
+      if (s.prices && typeof s.prices === 'object') state.prices = s.prices;
+      if (s.lastUpdated) state.lastUpdated = s.lastUpdated;
+      if (typeof s.autoRefresh === 'number') state.autoRefresh = s.autoRefresh;
+      if (s.lastSource) state.lastSource = s.lastSource;
+      if (typeof s.cdiRate === 'number' && s.cdiRate > 0) state.cdiRate = s.cdiRate;
+      if (s.rfLastProjection) state.rfLastProjection = s.rfLastProjection;
+      if (Array.isArray(s.history)) state.history = s.history;
+      if (s.priceHistory && typeof s.priceHistory === 'object') state.priceHistory = s.priceHistory;
+      if (Array.isArray(s.goals)) state.goals = s.goals;
+      if (Array.isArray(s.b3Catalog)) state.b3Catalog = s.b3Catalog;
+      if (s.b3CatalogSyncedAt) state.b3CatalogSyncedAt = s.b3CatalogSyncedAt;
+    }
+  } catch (e) { console.warn('Erro lendo estado', e); }
+  state.apiKey = DEFAULT_API_KEY;
+}
 
 function catalog() {
   const map = new Map();
@@ -114,7 +129,7 @@ const brl = n => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', cur
 const pct = n => { const v = Number(n || 0); return (v >= 0 ? '+' : '') + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'; };
 const today = () => new Date().toLocaleDateString('en-CA');
 const $ = id => document.getElementById(id);
-function save() { localStorage.setItem(KEY, JSON.stringify(state)); render(); }
+function save() { localStorage.setItem(getKey(), JSON.stringify(state)); render(); }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 /* ---------- RF helpers ---------- */
@@ -161,7 +176,7 @@ function isRFAsset(ticker) {
       if (state.prices[oldT] !== undefined) { state.prices[newT] = state.prices[oldT]; delete state.prices[oldT]; }
       for (const d of state.dividends) if (d.ticker === oldT) d.ticker = newT;
     }
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    try { localStorage.setItem(getKey(), JSON.stringify(state)); } catch (e) {}
   }
 })();
 
@@ -259,7 +274,7 @@ function runRFProjection(force) {
     if (projected > 0) state.prices[ticker] = projected;
   }
   state.rfLastProjection = todayStr;
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  try { localStorage.setItem(getKey(), JSON.stringify(state)); } catch (e) {}
 }
 
 /* ---------- Snapshot histórico ---------- */
@@ -274,7 +289,7 @@ function recordSnapshot() {
   if (existing) { existing.total = total; existing.cost = cost; }
   else state.history.push({ date: todayStr, total, cost });
   if (state.history.length > 730) state.history = state.history.slice(-730);
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  try { localStorage.setItem(getKey(), JSON.stringify(state)); } catch (e) {}
 }
 
 function ensureTickerInCatalog(ticker) {
@@ -795,7 +810,7 @@ async function handlePDFUpload(file) {
 }
 
 /* ============================================================
-   CATÁLOGO B3 (brapi /api/quote/list)
+   CATÁLOGO B3
    ============================================================ */
 function classifyB3Asset(stock, ticker, rawType) {
   const t = (rawType || '').toLowerCase();
@@ -839,7 +854,7 @@ async function syncB3Catalog() {
 
     state.b3Catalog = parsed;
     state.b3CatalogSyncedAt = new Date().toISOString();
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    try { localStorage.setItem(getKey(), JSON.stringify(state)); } catch (e) {}
 
     if (status) {
       status.textContent = `✅ ${parsed.length} ativos sincronizados (${timeAgo(state.b3CatalogSyncedAt)})`;
@@ -865,6 +880,191 @@ function clearB3Catalog() {
   save();
   const status = $('b3Status');
   if (status) { status.textContent = 'Catálogo B3 limpo'; status.className = 'cdi-status'; }
+}
+
+/* ============================================================
+   AUTENTICAÇÃO (local)
+   ============================================================ */
+function authScreen(id) {
+  ['splash','welcome','login','signup'].forEach(s => {
+    const el = document.getElementById('screen' + s.charAt(0).toUpperCase() + s.slice(1));
+    if (el) el.classList.toggle('hidden', s !== id);
+  });
+}
+
+function showApp() {
+  document.getElementById('authFlow')?.classList.add('hidden');
+  document.getElementById('appShell')?.classList.remove('hidden');
+}
+
+function showAuthFlow() {
+  document.getElementById('authFlow')?.classList.remove('hidden');
+  document.getElementById('appShell')?.classList.add('hidden');
+  authScreen('welcome');
+}
+
+async function hashPassword(pwd) {
+  try {
+    const buf = new TextEncoder().encode('enyao-salt-v1-' + pwd);
+    const hash = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) {
+    let h = 0;
+    const s = 'enyao-salt-v1-' + pwd;
+    for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+    return 'fb-' + Math.abs(h).toString(16);
+  }
+}
+
+function newUserId() {
+  if (crypto.randomUUID) return crypto.randomUUID().replace(/-/g,'').slice(0, 16);
+  return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function loadUsers() {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+function saveUsers(u) { try { localStorage.setItem(USERS_KEY, JSON.stringify(u)); } catch (e) {} }
+
+function persistAuth(user) {
+  authUser = user;
+  try { localStorage.setItem(AUTH_KEY, JSON.stringify(user)); } catch (e) {}
+}
+function clearAuth() {
+  authUser = null;
+  try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
+}
+function loadAuth() {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    if (!raw) return null;
+    const a = JSON.parse(raw);
+    if (a && a.userId) return a;
+  } catch (e) {}
+  return null;
+}
+
+function showAuthError(elId, msg) {
+  const el = $(elId);
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+async function doSignup() {
+  const err = $('signupError');
+  err?.classList.add('hidden');
+  const name = ($('signupName')?.value || '').trim();
+  const email = ($('signupEmail')?.value || '').trim().toLowerCase();
+  const pwd = $('signupPassword')?.value || '';
+  const pwd2 = $('signupPassword2')?.value || '';
+
+  if (!name) return showAuthError('signupError', 'Informe seu nome.');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('signupError', 'E-mail inválido.');
+  if (pwd.length < 6) return showAuthError('signupError', 'A senha precisa ter pelo menos 6 caracteres.');
+  if (pwd !== pwd2) return showAuthError('signupError', 'As senhas não batem.');
+
+  const users = loadUsers();
+  if (users[email]) return showAuthError('signupError', 'Esse e-mail já está cadastrado. Faça login.');
+
+  const btn = $('btnSignup');
+  btn.disabled = true; btn.textContent = 'Criando…';
+
+  const userId = newUserId();
+  users[email] = { userId, name, email, passwordHash: await hashPassword(pwd), createdAt: new Date().toISOString() };
+  saveUsers(users);
+  persistAuth({ userId, name, email });
+
+  // Migra dados do modo convidado (se existirem e a conta nova estiver vazia)
+  try {
+    const guestRaw = localStorage.getItem(BASE_KEY);
+    if (guestRaw && !localStorage.getItem(getKey())) {
+      localStorage.setItem(getKey(), guestRaw);
+    }
+  } catch (e) {}
+
+  btn.disabled = false; btn.textContent = 'Criar conta';
+  loadStateForCurrentUser();
+  bootAfterAuth();
+}
+
+async function doLogin() {
+  const err = $('loginError');
+  err?.classList.add('hidden');
+  const email = ($('loginEmail')?.value || '').trim().toLowerCase();
+  const pwd = $('loginPassword')?.value || '';
+  if (!email || !pwd) return showAuthError('loginError', 'Preencha e-mail e senha.');
+
+  const users = loadUsers();
+  const u = users[email];
+  if (!u) return showAuthError('loginError', 'E-mail não cadastrado neste aparelho.');
+  const h = await hashPassword(pwd);
+  if (h !== u.passwordHash) return showAuthError('loginError', 'Senha incorreta.');
+
+  persistAuth({ userId: u.userId, name: u.name, email: u.email });
+  loadStateForCurrentUser();
+  bootAfterAuth();
+}
+
+function enterAsGuest() {
+  clearAuth();
+  loadStateForCurrentUser();
+  bootAfterAuth();
+}
+
+window.logoutConfirm = function() {
+  if (!confirm('Sair da sua conta?\n\nSeus dados continuam salvos neste aparelho.')) return;
+  clearAuth();
+  showAuthFlow();
+};
+
+function renderAccount() {
+  const box = $('accountBox');
+  if (!box) return;
+  if (authUser && authUser.userId) {
+    const initial = (authUser.name || '?').trim().charAt(0).toUpperCase();
+    box.innerHTML = `
+      <div class="account-card">
+        <div class="account-avatar">${esc(initial)}</div>
+        <div class="account-info">
+          <div class="account-name">${esc(authUser.name)}</div>
+          <div class="account-email">${esc(authUser.email)}</div>
+          <span class="account-badge user">Conta ativa</span>
+        </div>
+      </div>
+      <button class="ghost" style="width:100%;margin-top:12px" onclick="logoutConfirm()">Sair da conta</button>
+    `;
+  } else {
+    box.innerHTML = `
+      <div class="account-card">
+        <div class="account-avatar" style="background:rgba(255,255,255,.06);color:var(--muted)">?</div>
+        <div class="account-info">
+          <div class="account-name">Modo convidado</div>
+          <div class="account-email">Seus dados ficam só neste aparelho.</div>
+          <span class="account-badge guest">Sem conta</span>
+        </div>
+      </div>
+      <button class="primary" style="width:100%;margin-top:12px" onclick="openSignupFromApp()">Criar conta agora</button>
+    `;
+  }
+}
+
+window.openSignupFromApp = function() {
+  if (!confirm('Criar uma conta agora?\n\nSeus dados locais serão copiados pra sua nova conta.')) return;
+  document.getElementById('authFlow')?.classList.remove('hidden');
+  document.getElementById('appShell')?.classList.add('hidden');
+  authScreen('signup');
+};
+
+function bootAfterAuth() {
+  showApp();
+  renderAccount();
+  try {
+    runRFProjection(false);
+    recordSnapshot();
+    render();
+    setupAutoRefresh();
+  } catch (e) { console.error('Erro no boot pós-auth:', e); }
 }
 
 /* ============================================================
@@ -954,7 +1154,7 @@ async function fetchPriceHistory(ticker) {
     const hist = j?.results?.[0]?.historicalDataPrice;
     if (!Array.isArray(hist) || !hist.length) return null;
     state.priceHistory[ticker] = { ts: Date.now(), data: hist };
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    try { localStorage.setItem(getKey(), JSON.stringify(state)); } catch (e) {}
     return hist;
   } catch (e) { return null; }
 }
@@ -1464,6 +1664,7 @@ function render() {
   renderDivHistory();
   renderIR();
   updateSaldoDisplay();
+  renderAccount();
   if (!$('tools')?.classList.contains('hidden')) renderTools();
   if($('autoRefreshSelect')) $('autoRefreshSelect').value = String(state.autoRefresh || 0);
   if($('cdiRateInput')) $('cdiRateInput').value = numToBR(state.cdiRate);
@@ -1684,6 +1885,12 @@ $('simCalcBtn')?.addEventListener('click', () => window.calcSimulation());
 $('genReportBtn')?.addEventListener('click', () => generateReportImage());
 $('syncB3Btn')?.addEventListener('click', () => syncB3Catalog());
 $('clearB3Btn')?.addEventListener('click', () => clearB3Catalog());
+$('btnLogin')?.addEventListener('click', () => doLogin());
+$('btnSignup')?.addEventListener('click', () => doSignup());
+$('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doLogin(); } });
+$('signupPassword2')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doSignup(); } });
+window.enterAsGuest = enterAsGuest;
+window.authScreen = authScreen;
 $('addGoalBtn')?.addEventListener('click', () => {
   const box = $('goalFormBox');
   box.classList.toggle('hidden');
@@ -1853,16 +2060,17 @@ $('importFile')?.addEventListener('change', async e => {
 
 $('diagBtn')?.addEventListener('click', () => {
   try {
-    const raw = localStorage.getItem(KEY) || '(vazio)';
+    const raw = localStorage.getItem(getKey()) || '(vazio)';
     const parsed = raw !== '(vazio)' ? JSON.parse(raw) : null;
-    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nCatálogo B3: ${(parsed.b3Catalog || []).length}\nPreços: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%\nSaldo: ${brl(getSaldoDisponivel())}` : '(sem dados)';
+    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nCatálogo B3: ${(parsed.b3Catalog || []).length}\nPreços: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%\nSaldo: ${brl(getSaldoDisponivel())}\n\nConta: ${authUser ? authUser.email : 'Convidado'}` : '(sem dados)';
     alert('📦 Dados no aparelho:\n\n' + summary + '\n\nTamanho: ' + raw.length + ' caracteres');
   } catch (e) { alert('Erro: ' + e.message); }
 });
 
 $('clearBtn')?.addEventListener('click', () => {
   if (confirm('Apagar todos os dados deste aparelho?')) {
-    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {}, goals: [], b3Catalog: [], b3CatalogSyncedAt: null };
+    state = DEFAULT_STATE();
+    state.apiKey = DEFAULT_API_KEY;
     save();
   }
 });
@@ -1915,12 +2123,17 @@ async function fetchPrice(ticker) {
   return null;
 }
 
-/* ---------- Start ---------- */
+/* ---------- Start com autenticação ---------- */
 try {
-  runRFProjection(false);
-  recordSnapshot();
-  render();
-  setupAutoRefresh();
+  authUser = loadAuth();
+  if (authUser && authUser.userId) {
+    loadStateForCurrentUser();
+    bootAfterAuth();
+  } else {
+    document.getElementById('authFlow')?.classList.remove('hidden');
+    document.getElementById('appShell')?.classList.add('hidden');
+    setTimeout(() => authScreen('welcome'), 1200);
+  }
 } catch (e) {
   console.error('Erro no start:', e);
 }
