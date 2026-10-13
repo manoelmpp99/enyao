@@ -229,3 +229,20 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
   font-size:26px !important;font-weight:800 !important;letter-spacing:-.8px;text-align:right;color:var(--text)}
 .modal-input:focus{outline:0;background:transparent !important}
 .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+
+
+/* ---------- Card de saldo disponível ---------- */
+.saldo-card{
+  background:linear-gradient(135deg,rgba(34,211,238,.12),rgba(168,85,247,.12));
+  border:1px solid rgba(34,211,238,.3);
+  border-radius:18px;padding:20px;text-align:center;
+  box-shadow:0 12px 32px -14px rgba(34,211,238,.35);
+}
+.saldo-label{font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.saldo-valor{font-size:32px;font-weight:800;letter-spacing:-1px;margin:8px 0 14px;color:#fff}
+.saldo-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.saldo-btn{
+  background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.18);
+  font-weight:700;font-size:13px;padding:12px;border-radius:12px;
+}
+.saldo-btn:active{transform:scale(.97)}
