@@ -192,11 +192,9 @@ function parseNum(str) {
 function numToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function qtyToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 8 }); }
 
-/* ---------- Saldo disponível ---------- */
+/* ---------- Saldo ---------- */
 function getSaldoDisponivel() {
-  const total = state.trades
-    .filter(t => t.ticker === SALDO_TICKER)
-    .reduce((sum, t) => sum + (t.side === 'buy' ? t.price : -t.price), 0);
+  const total = state.trades.filter(t => t.ticker === SALDO_TICKER).reduce((sum, t) => sum + (t.side === 'buy' ? t.price : -t.price), 0);
   return Math.max(0, total);
 }
 function updateSaldoDisplay() {
@@ -631,13 +629,8 @@ function parseItauNota(text) {
       const price = parseFloat(m[5].replace(/\./g, '').replace(',', '.'));
       if (!qty || !price) continue;
       let ticker = guessTickerFromName(especificacao);
-      if (!ticker) {
-        const tk = especificacao.match(/\b([A-Z]{4}\d{1,2})\b/);
-        if (tk) ticker = tk[1];
-      }
-      if (!ticker) {
-        ticker = especificacao.replace(/\s+(CI|ER|N2|N1|ON|PN|UNT|CI ER)\s*$/i, '').split(/\s+/).slice(0, 3).join(' ').toUpperCase();
-      }
+      if (!ticker) { const tk = especificacao.match(/\b([A-Z]{4}\d{1,2})\b/); if (tk) ticker = tk[1]; }
+      if (!ticker) { ticker = especificacao.replace(/\s+(CI|ER|N2|N1|ON|PN|UNT|CI ER)\s*$/i, '').split(/\s+/).slice(0, 3).join(' ').toUpperCase(); }
       results.push({ ticker, side, qty, price, date: dataNota, fees: 0 });
     }
   }
@@ -792,8 +785,10 @@ async function handlePDFUpload(file) {
 }
 
 /* ============================================================
-   TELA DE DETALHE DO ATIVO
+   TELA DE DETALHE
    ============================================================ */
+let currentChartData = null;
+
 function openAssetDetail(ticker) {
   const p = positions().find(x => x.ticker === ticker);
   if (!p) return;
@@ -819,7 +814,6 @@ function openAssetDetail(ticker) {
   $('adDiv12m').textContent = p.div12m > 0 ? brl(p.div12m) : '—';
   $('adDiv12m').style.color = 'var(--cyan)';
 
-  // operações
   const trades = state.trades.filter(t => t.ticker === ticker).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   if (trades.length) {
     $('adTrades').innerHTML = trades.map(t => {
@@ -833,17 +827,13 @@ function openAssetDetail(ticker) {
           <span class="ad-badge ${isBuy ? 'buy' : 'sell'}">${label}</span>
           <div class="meta">${esc(t.date)}</div>
         </div>
-        <div class="value">
-          ${brl(total)}
-          <small>${detail}</small>
-        </div>
+        <div class="value">${brl(total)}<small>${detail}</small></div>
       </div>`;
     }).join('');
   } else {
     $('adTrades').innerHTML = '<div class="empty" style="padding:14px">Nenhuma operação registrada.</div>';
   }
 
-  // proventos
   const divs = state.dividends.filter(d => d.ticker === ticker).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   if (divs.length) {
     $('adDividends').innerHTML = divs.map(d => `
@@ -865,7 +855,16 @@ function openAssetDetail(ticker) {
 window.closeAssetDetail = function() {
   $('assetDetail')?.classList.add('hidden');
   document.body.style.overflow = '';
+  currentChartData = null;
+  hideChartOverlays();
 };
+
+function hideChartOverlays() {
+  const l = $('adChartLine'), d = $('adChartDot'), t = $('adChartTip');
+  if (l) l.style.opacity = '0';
+  if (d) d.style.opacity = '0';
+  if (t) t.style.opacity = '0';
+}
 
 async function fetchPriceHistory(ticker) {
   if (!state.priceHistory) state.priceHistory = {};
@@ -885,13 +884,30 @@ async function fetchPriceHistory(ticker) {
   } catch (e) { return null; }
 }
 
+function normalizeDate(d) {
+  if (typeof d === 'number') {
+    let ts = d;
+    if (ts > 1e10) ts = Math.floor(ts / 1000);
+    const date = new Date(ts * 1000);
+    return date.toISOString().slice(0, 10);
+  }
+  if (typeof d === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0, 10);
+    const parsed = new Date(d);
+    if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  }
+  return '';
+}
+
 async function loadAssetChart(ticker) {
   const svg = $('adChart');
   const loading = $('adChartLoading');
   if (!svg || !loading) return;
   svg.innerHTML = '';
+  hideChartOverlays();
   loading.style.display = 'flex';
   loading.textContent = 'Carregando…';
+  currentChartData = null;
 
   if (isRFAsset(ticker)) {
     loading.textContent = 'Renda fixa não tem gráfico de preço';
@@ -906,12 +922,16 @@ async function loadAssetChart(ticker) {
     return;
   }
 
-  const prices = hist.map(h => Number(h.close)).filter(p => Number.isFinite(p) && p > 0);
-  if (prices.length < 2) {
+  const points = hist
+    .map(h => ({ date: normalizeDate(h.date), close: Number(h.close) }))
+    .filter(p => Number.isFinite(p.close) && p.close > 0);
+
+  if (points.length < 2) {
     svg.innerHTML = '<text x="50" y="20" text-anchor="middle" fill="#8a8a9c" font-size="3.5">Sem dados suficientes</text>';
     return;
   }
 
+  const prices = points.map(p => p.close);
   const w = 100, height = 40, padY = 2.5;
   const min = Math.min(...prices);
   const max = Math.max(...prices);
@@ -920,12 +940,12 @@ async function loadAssetChart(ticker) {
   const positive = last >= first;
 
   let linePath = '', areaPath = '';
-  prices.forEach((price, i) => {
-    const x = (i / (prices.length - 1)) * w;
-    const y = height - padY - ((price - min) / range) * (height - padY * 2);
+  points.forEach((pt, i) => {
+    const x = (i / (points.length - 1)) * w;
+    const y = height - padY - ((pt.close - min) / range) * (height - padY * 2);
     if (i === 0) { linePath += `M ${x} ${y}`; areaPath += `M ${x} ${height} L ${x} ${y}`; }
     else { linePath += ` L ${x} ${y}`; areaPath += ` L ${x} ${y}`; }
-    if (i === prices.length - 1) areaPath += ` L ${x} ${height} Z`;
+    if (i === points.length - 1) areaPath += ` L ${x} ${height} Z`;
   });
 
   const c1 = positive ? '#22d3ee' : '#ff4d80';
@@ -946,7 +966,112 @@ async function loadAssetChart(ticker) {
     <path d="${areaPath}" fill="url(#${uid}-fill)"/>
     <path d="${linePath}" fill="none" stroke="url(#${uid}-line)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
   `;
+
+  currentChartData = { points, min, max, range, padY, height, w };
 }
+
+/* ---------- Interação com o gráfico ---------- */
+(function setupChartInteraction(){
+  let wrap = null;
+  let touchActive = false;
+  let lockedHorizontal = false;
+  let startX = 0, startY = 0;
+
+  function updateOverlays(clientX) {
+    if (!currentChartData || !wrap) return;
+    const rect = wrap.getBoundingClientRect();
+    let x = clientX - rect.left;
+    x = Math.max(0, Math.min(rect.width, x));
+    const pctX = x / rect.width;
+
+    const pts = currentChartData.points;
+    const idx = Math.round(pctX * (pts.length - 1));
+    const point = pts[idx];
+    if (!point) return;
+
+    const xPct = (idx / (pts.length - 1)) * 100;
+    const yViewBox = currentChartData.height - currentChartData.padY
+      - ((point.close - currentChartData.min) / currentChartData.range) * (currentChartData.height - currentChartData.padY * 2);
+    const yPct = (yViewBox / currentChartData.height) * 100;
+
+    const line = $('adChartLine');
+    const dot = $('adChartDot');
+    const tip = $('adChartTip');
+    if (!line || !dot || !tip) return;
+
+    line.style.left = xPct + '%';
+    line.style.opacity = '1';
+    dot.style.left = xPct + '%';
+    dot.style.top = yPct + '%';
+    dot.style.opacity = '1';
+
+    const price = point.close.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    let dateStr = point.date || '';
+    if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [y, m, d] = dateStr.split('-');
+      dateStr = `${d}/${m}/${y}`;
+    }
+    tip.innerHTML = `<div class="ad-tip-price">${price}</div><div class="ad-tip-date">${dateStr}</div>`;
+    tip.style.left = xPct + '%';
+    tip.style.opacity = '1';
+  }
+
+  function onTouchStart(e) {
+    wrap = $('adChartWrap');
+    if (!wrap || !currentChartData) return;
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    touchActive = true;
+    lockedHorizontal = false;
+  }
+
+  function onTouchMove(e) {
+    if (!touchActive || !wrap || !currentChartData) return;
+    const t = e.touches[0];
+    const dx = Math.abs(t.clientX - startX);
+    const dy = Math.abs(t.clientY - startY);
+    if (!lockedHorizontal) {
+      if (dx > 6 && dx > dy * 1.2) { lockedHorizontal = true; }
+      else if (dy > 8) { touchActive = false; return; }
+      else { return; }
+    }
+    if (lockedHorizontal) {
+      if (e.cancelable) e.preventDefault();
+      updateOverlays(t.clientX);
+    }
+  }
+
+  function onTouchEnd() {
+    touchActive = false;
+    lockedHorizontal = false;
+    hideChartOverlays();
+  }
+
+  function onMouseDown(e) {
+    wrap = $('adChartWrap');
+    if (!wrap || !currentChartData) return;
+    touchActive = true;
+    updateOverlays(e.clientX);
+  }
+  function onMouseMove(e) {
+    if (!touchActive || !currentChartData) return;
+    updateOverlays(e.clientX);
+  }
+  function onMouseUp() {
+    if (!touchActive) return;
+    touchActive = false;
+    hideChartOverlays();
+  }
+
+  document.addEventListener('touchstart', onTouchStart, { passive: true });
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', onTouchEnd);
+  document.addEventListener('touchcancel', onTouchEnd);
+  document.addEventListener('mousedown', onMouseDown);
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+})();
 
 window.adActionBuy = function() {
   const ticker = $('assetDetail')?.dataset.ticker;
