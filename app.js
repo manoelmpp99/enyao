@@ -15,13 +15,59 @@
 
 const DEFAULT_API_KEY = 'n2jSRHKNBe1nYrLza56x6n';
 const KEY = 'enyao-v02';
+const SALDO_TICKER = '__SALDO__';
 
 const baseCatalog = [
-  ['MXRF11','Maxi Renda','FII'],['HGLG11','CSHG Logística','FII'],['VISC11','Vinci Shopping Centers','FII'],['XPML11','XP Malls','FII'],['KNRI11','Kinea Renda Imobiliária','FII'],['GARE11','Guardian Real Estate','FII'],['TRXF11','TRX Real Estate','FII'],['RECR11','FII REC Recebíveis Imobiliários','FII'],['LIFE11','Life Capital Partners','FII'],['XPCA11','XP Crédito Agrícola','FII'],['FGAA11','FG Agro','FII'],['AAZQ11','AZ Quest Sole','FII'],['IRIM11','Iridium Recebíveis Imobiliários','FII'],['KNCR11','Kinea Crédito Imobiliário','FII'],['KNIP11','Kinea Índices de Preços','FII'],['HGRU11','CSHG Renda Urbana','FII'],['XPLG11','XP Log','FII'],['BRCO11','Bresco Logística','FII'],['BTLG11','BTG Logística','FII'],['VILG11','Vinci Logística','FII'],['JSRE11','JS Real Estate','FII'],['RBRF11','RBR Alpha','FII'],['CPTS11','Capitânia Securities','FII'],['DEVA11','Devant Recebíveis','FII'],
+  ['MXRF11','Maxi Renda','FII'],['HGLG11','CSHG Logística','FII'],['VISC11','Vinci Shopping Centers','FII'],['XPML11','XP Malls','FII'],['KNRI11','Kinea Renda Imobiliária','FII'],['GARE11','Guardian Real Estate','FII'],['TRXF11','TRX Real Estate','FII'],['RECR11','FII REC Recebíveis Imobiliários','FII'],['LIFE11','Life Capital Partners','FII'],['XPCA11','XP Crédito Agrícola','FII'],['FGAA11','FG Agro','FII'],['AAZQ11','AZ Quest Sole','FII'],['IRIM11','Iridium Recebíveis Imobiliários','FII'],['KNCR11','Kinea Crédito Imobiliário','FII'],['KNIP11','Kinea Índices de Preços','FII'],['HGRU11','CSHG Renda Urbana','FII'],['XPLG11','XP Log','FII'],['BRCO11','Bresco Logística','FII'],['BTLG11','BTG Logística','FII'],['VILG11','Vinci Logística','FII'],['JSRE11','JS Real Estate','FII'],['RBRF11','RBR Alpha','FII'],['RBRP11','RBR Properties','FII'],['CPTS11','Capitânia Securities','FII'],['DEVA11','Devant Recebíveis','FII'],
   ['ITSA4','Itaúsa PN','Ação'],['ITUB4','Itaú Unibanco PN','Ação'],['PETR4','Petrobras PN','Ação'],['PETR3','Petrobras ON','Ação'],['VALE3','Vale ON','Ação'],['BBAS3','Banco do Brasil ON','Ação'],['WEGE3','WEG ON','Ação'],['BBDC4','Bradesco PN','Ação'],['BBDC3','Bradesco ON','Ação'],['ABEV3','Ambev ON','Ação'],['B3SA3','B3 ON','Ação'],['EGIE3','Engie Brasil ON','Ação'],['TAEE11','Taesa units','Ação'],['OPCT3','OceanPact ON','Ação'],['MGLU3','Magazine Luiza ON','Ação'],['LREN3','Lojas Renner ON','Ação'],['RENT3','Localiza ON','Ação'],['SUZB3','Suzano ON','Ação'],['PRIO3','PetroRio ON','Ação'],['RADL3','Raia Drogasil ON','Ação'],['RAIL3','Rumo ON','Ação'],['CSAN3','Cosan ON','Ação'],['ELET3','Eletrobras ON','Ação'],['ELET6','Eletrobras PNB','Ação'],['CMIG4','Cemig PN','Ação'],['SANB11','Santander units','Ação'],['BBSE3','BB Seguridade ON','Ação'],['CXSE3','Caixa Seguridade ON','Ação'],['VIVT3','Telefônica Brasil ON','Ação'],['TIMS3','TIM ON','Ação'],['NTCO3','Natura ON','Ação'],['HAPV3','Hapvida ON','Ação'],['RDOR3','Rede DOr ON','Ação'],['FLRY3','Fleury ON','Ação'],['CCRO3','CCR ON','Ação'],['SBSP3','Sabesp ON','Ação'],['CPLE6','Copel PNB','Ação'],['EQTL3','Equatorial ON','Ação'],['UGPA3','Ultrapar ON','Ação'],['CSNA3','CSN ON','Ação'],['GGBR4','Gerdau PN','Ação'],['GOAU4','Metalúrgica Gerdau PN','Ação'],['USIM5','Usiminas PNA','Ação'],['CYRE3','Cyrela ON','Ação'],['MRVE3','MRV ON','Ação'],['EZTC3','EZTec ON','Ação'],['DIRR3','Direcional ON','Ação'],['TEND3','Tenda ON','Ação'],['ALPA4','Alpargatas PN','Ação'],
   ['IVVB11','iShares S&P 500','ETF'],['BOVA11','iShares Ibovespa','ETF'],['SMAL11','iShares Small Cap','ETF'],['DIVO11','It Now IDIV','ETF'],['LFTS11','Investo Tesouro Selic','ETF'],['NDIV11','Nu ETF Dividendos','ETF'],['XINA11','Trend China','ETF'],['HASH11','Hashdex Nasdaq Crypto','ETF'],['QBTC11','QR Bitcoin','ETF'],['GOLD11','Trend Ouro','ETF'],['FIXA11','Trend FIXA','ETF'],
   ['CDB','CDB bancário','Renda fixa'],['TESOURO SELIC','Tesouro Selic','Renda fixa'],['TESOURO IPCA','Tesouro IPCA+','Renda fixa'],['TESOURO PREFIXADO','Tesouro Prefixado','Renda fixa'],['LCI','Letra de Crédito Imobiliário','Renda fixa'],['LCA','Letra de Crédito do Agronegócio','Renda fixa'],['CRI','Certificado de Recebíveis Imobiliários','Renda fixa'],['CRA','Certificado de Recebíveis do Agronegócio','Renda fixa'],['DEBENTURE','Debênture','Renda fixa']
 ].map(([ticker, name, type]) => ({ ticker, name, type, custom: false }));
+
+const NAME_TO_TICKER = {
+  'MAXI REN': 'MXRF11',
+  'RBRR PAX': 'RBRP11',
+  'RBR PAX': 'RBRP11',
+  'TRX REAL': 'TRXF11',
+  'HGLG': 'HGLG11',
+  'VISC': 'VISC11',
+  'XPML': 'XPML11',
+  'KNRI': 'KNRI11',
+  'GARE': 'GARE11',
+  'RECR': 'RECR11',
+  'LIFE': 'LIFE11',
+  'XPCA': 'XPCA11',
+  'FGAA': 'FGAA11',
+  'AAZQ': 'AAZQ11',
+  'IRIM': 'IRIM11',
+  'KNCR': 'KNCR11',
+  'KNIP': 'KNIP11',
+  'HGRU': 'HGRU11',
+  'XPLG': 'XPLG11',
+  'BRCO': 'BRCO11',
+  'BTLG': 'BTLG11',
+  'VILG': 'VILG11',
+  'JSRE': 'JSRE11',
+  'RBRF': 'RBRF11',
+  'CPTS': 'CPTS11',
+  'DEVA': 'DEVA11',
+  'PETROBRAS': 'PETR4',
+  'PETROLEO BRAS': 'PETR4',
+  'VALE': 'VALE3',
+  'ITAU UNIBANCO': 'ITUB4',
+  'ITAUSA': 'ITSA4',
+  'BRADESCO': 'BBDC4',
+  'BANCO DO BRASIL': 'BBAS3',
+  'WEG': 'WEGE3',
+  'AMBEV': 'ABEV3',
+  'MAGAZINE LUIZA': 'MGLU3',
+  'LOJAS RENNER': 'LREN3',
+  'LOCALIZA': 'RENT3',
+  'SUZANO': 'SUZB3',
+  'ELETROBRAS': 'ELET3',
+  'CEMIG': 'CMIG4',
+  'SANTANDER': 'SANB11'
+};
 
 const COLOR_MAP = { 'Ação': '#ec4899', 'FII': '#22d3ee', 'ETF': '#a855f7', 'Renda fixa': '#10b981', 'Outro': '#64748b' };
 const RF_TICKERS = ['CDB','LCI','LCA','CRI','CRA','DEBENTURE','TESOURO SELIC','TESOURO IPCA','TESOURO PREFIXADO'];
@@ -65,6 +111,7 @@ function rfPct(t) { return isRFComposite(t) ? (parseFloat(t.split('@')[1]) || 10
 function buildRFTicker(base, pct) { return `${base}@${pct}`; }
 function displayTicker(t) {
   if (!t) return '';
+  if (t === SALDO_TICKER) return 'Saldo';
   if (isRFComposite(t)) { const [b, p] = t.split('@'); return (Number(p) === 100) ? b : `${b} · ${p}% CDI`; }
   return t;
 }
@@ -75,6 +122,7 @@ function catalogEntry(ticker) {
 }
 function isRFAsset(ticker) {
   if (!ticker) return false;
+  if (ticker === SALDO_TICKER) return false;
   if (isRFComposite(ticker)) return true;
   if (isRFTicker(ticker)) return true;
   const c = catalog().find(x => x.ticker === ticker);
@@ -85,6 +133,7 @@ function isRFAsset(ticker) {
   const map = {};
   for (const t of state.trades) {
     if (isRFComposite(t.ticker)) continue;
+    if (t.ticker === SALDO_TICKER) continue;
     const isRF = isRFTicker(t.ticker) || catalogEntry(t.ticker)?.type === 'Renda fixa';
     if (!isRF) continue;
     const newT = buildRFTicker(t.ticker, t.pctCDI || 100);
@@ -140,6 +189,39 @@ function parseNum(str) {
 function numToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function qtyToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 8 }); }
 
+/* ---------- Saldo disponível ---------- */
+function getSaldoDisponivel() {
+  const total = state.trades
+    .filter(t => t.ticker === SALDO_TICKER)
+    .reduce((sum, t) => sum + (t.side === 'buy' ? t.price : -t.price), 0);
+  return Math.max(0, total);
+}
+function updateSaldoDisplay() {
+  const el = $('saldoDisponivel');
+  if (el) el.textContent = brl(getSaldoDisponivel());
+}
+window.addSaldo = async function() {
+  const v = await openMoneyModal('Adicionar saldo', '');
+  if (v === null) return;
+  const n = parseMoneyBR(v);
+  if (!n || n <= 0) { alert('Informe um valor maior que zero.'); return; }
+  state.trades.push({ ticker: SALDO_TICKER, side: 'buy', qty: 1, price: n, fees: 0, date: today() });
+  save();
+  alert(`✅ Saldo adicionado: ${brl(n)}`);
+};
+window.removeSaldo = async function() {
+  const atual = getSaldoDisponivel();
+  if (atual <= 0) { alert('Não há saldo para remover.'); return; }
+  const v = await openMoneyModal('Remover saldo', numToBR(atual));
+  if (v === null) return;
+  const n = parseMoneyBR(v);
+  if (!n || n <= 0) { alert('Informe um valor maior que zero.'); return; }
+  if (n > atual + 0.01) { alert(`Você só tem ${brl(atual)} disponível.`); return; }
+  state.trades.push({ ticker: SALDO_TICKER, side: 'sell', qty: 1, price: n, fees: 0, date: today() });
+  save();
+  alert(`✅ Saldo removido: ${brl(n)}`);
+};
+
 /* ---------- RF projection ---------- */
 function projectRFBalance(ticker) {
   const trades = state.trades.filter(t => t.ticker === ticker);
@@ -185,7 +267,7 @@ function recordSnapshot() {
 }
 
 function ensureTickerInCatalog(ticker) {
-  if (!ticker) return;
+  if (!ticker || ticker === SALDO_TICKER) return;
   const base = isRFComposite(ticker) ? rfBase(ticker) : ticker;
   if (isRFComposite(ticker)) {
     if (!catalog().some(a => a.ticker === base)) state.catalog.push({ ticker: base, name: base, type: 'Renda fixa', custom: true });
@@ -200,6 +282,7 @@ function ensureTickerInCatalog(ticker) {
 function positions() {
   let m = {};
   for (const t of state.trades) {
+    if (t.ticker === SALDO_TICKER) continue;
     const rf = isRFAsset(t.ticker);
     let p = m[t.ticker] || (m[t.ticker] = { ticker: t.ticker, qty: 0, cost: 0, realized: 0, isRF: false, pctCDI: rfPct(t.ticker) });
     p.isRF = rf;
@@ -342,6 +425,7 @@ function realizedEvents() {
   const m = {};
   const sorted = [...state.trades].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   for (const t of sorted) {
+    if (t.ticker === SALDO_TICKER) continue;
     const c = catalogEntry(t.ticker);
     const type = c?.type || 'Outro';
     const rf = isRFAsset(t.ticker);
@@ -514,30 +598,94 @@ function parseCSVLine(line) {
   return { ticker: tk.toUpperCase(), side, qty, price, date, fees };
 }
 
+function guessTickerFromName(nome) {
+  const upper = (nome || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const keys = Object.keys(NAME_TO_TICKER).sort((a, b) => b.length - a.length);
+  for (const k of keys) {
+    const knorm = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (upper.includes(knorm)) return NAME_TO_TICKER[k];
+  }
+  return null;
+}
+
+/* Parser específico Itaú: "B3 RV LISTADO V VISTA FII MAXI REN CI @ 1 9,07 9,07 C" */
+function parseItauNota(text) {
+  if (!text) return [];
+  const results = [];
+  const lines = String(text).replace(/\r/g, '\n').split(/\n+/).map(l => l.trim()).filter(Boolean);
+  let dataNota = today();
+  const dataM = text.match(/Data Pregão\s*\n?\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+  if (dataM) dataNota = `${dataM[3]}-${dataM[2]}-${dataM[1]}`;
+  else {
+    const alt = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if (alt) dataNota = `${alt[3]}-${alt[2]}-${alt[1]}`;
+  }
+
+  for (const line of lines) {
+    // Padrão principal Itaú: B3 RV LISTADO (C|V) VISTA ...nome... @ qty preço total D/C
+    const m = line.match(/B3\s+RV\s+LISTADO\s+([CV])\s+(\S+)\s+(.+?)\s+[@$]?\s+(\d+)\s+([\d.]+,\d+)\s+([\d.]+,\d+)/i);
+    if (m) {
+      const side = m[1].toUpperCase() === 'C' ? 'buy' : 'sell';
+      const especificacao = m[3].trim();
+      const qty = parseInt(m[4], 10);
+      const price = parseFloat(m[5].replace(/\./g, '').replace(',', '.'));
+      if (!qty || !price) continue;
+      let ticker = guessTickerFromName(especificacao);
+      if (!ticker) {
+        const tk = especificacao.match(/\b([A-Z]{4}\d{1,2})\b/);
+        if (tk) ticker = tk[1];
+      }
+      if (!ticker) {
+        ticker = especificacao.replace(/\s+(CI|ER|N2|N1|ON|PN|UNT|UNT N2|UNT N1|CI ER)\s*$/i, '').split(/\s+/).slice(0, 3).join(' ').toUpperCase();
+      }
+      results.push({ ticker, side, qty, price, date: dataNota, fees: 0 });
+    }
+  }
+  return results;
+}
+
+/* Parser compacto: "MXRF11 C 10 9,85 D" (também pega o padrão XP/Rico) */
+function parseCompactNota(text) {
+  if (!text) return [];
+  const results = [];
+  const lines = String(text).replace(/\r/g, '\n').split(/\n+/).map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    const m = line.match(/(?:^|\s)([A-Z]{3,6}\d{1,3})\s+([CV])\s+(\d+)\s+([\d.]+,\d+)/i);
+    if (m) {
+      const ticker = m[1].toUpperCase();
+      const side = m[2].toUpperCase() === 'C' ? 'buy' : 'sell';
+      const qty = parseInt(m[3], 10);
+      const price = parseFloat(m[4].replace(/\./g, '').replace(',', '.'));
+      if (qty && price) results.push({ ticker, side, qty, price, date: today(), fees: 0 });
+    }
+  }
+  return results;
+}
+
 function parseNotaText(fullText) {
   if (!fullText) return [];
   const seen = new Set();
   const results = [];
   const push = r => {
-    if (!r) return;
+    if (!r || !r.ticker) return;
     const k = r.ticker + '|' + r.side + '|' + r.qty + '|' + r.price + '|' + r.date;
     if (!seen.has(k)) { seen.add(k); results.push(r); }
   };
-  let txt = String(fullText).replace(/\r/g, '\n');
-  txt = txt.replace(/[ \t]+/g, ' ');
+
+  // 1) Parser Itaú (nome do fundo, sem ticker)
+  parseItauNota(fullText).forEach(push);
+
+  // 2) Parser compacto (ticker direto)
+  parseCompactNota(fullText).forEach(push);
+
+  // 3) Parser genérico por linha (CSV, Sinacor)
+  let txt = String(fullText).replace(/\r/g, '\n').replace(/[ \t]+/g, ' ');
   const lines = txt.split(/\n+/).map(l => l.trim()).filter(Boolean);
   for (const line of lines) {
     const csv = parseCSVLine(line); if (csv) { push(csv); continue; }
     const rec = parseRowSinacor(line); if (rec) push(rec);
   }
-  if (results.length === 0) {
-    for (let i = 0; i < lines.length; i++) {
-      const j2 = lines.slice(i, i + 2).join(' ');
-      push(parseRowSinacor(j2));
-      const j3 = lines.slice(i, i + 3).join(' ');
-      push(parseRowSinacor(j3));
-    }
-  }
+
   return results;
 }
 
@@ -592,7 +740,7 @@ function renderImportPreview() {
   if (!box) return;
   if (!pendingImport.length) {
     box.classList.remove('hidden');
-    box.innerHTML = `<div class="import-preview-card"><div class="import-preview-title">Nada reconhecido</div><div class="import-status err">Não identifiquei negócios. Formatos aceitos: <b>1 C PETR4 ... 100 38,20 3.820,00 D</b> (Sinacor), <b>MXRF11 C 10 9,85 2025-01-15</b>, CSV ou <b>PETR4 Compra 100 38,20</b>.</div></div>`;
+    box.innerHTML = `<div class="import-preview-card"><div class="import-preview-title">Nada reconhecido</div><div class="import-status err">Não identifiquei negócios nesse texto. Formatos aceitos: Itaú, Sinacor, CSV, ou <b>MXRF11 C 10 9,85</b>.</div></div>`;
     return;
   }
   const rows = pendingImport.map((r, i) => {
@@ -693,18 +841,19 @@ function render() {
       <div class="yoc-line"><span>YOC 12m (sobre preço médio)</span><b>${yocText}</b></div>
       <div class="actions"><button type="button" class="ghost-sm" onclick="updatePrice('${esc(p.ticker)}')">Editar preço</button><button type="button" class="ghost-sm" onclick="openSell('${esc(p.ticker)}')">Vender</button><button type="button" class="ghost-sm" onclick="showProvento('${esc(p.ticker)}')">Provento</button><button type="button" class="ghost-sm danger-ghost" onclick="removePosition('${esc(p.ticker)}')">Remover</button></div>
     </div>`;
-  }).join('') : '<div class="empty">Nenhuma posição ainda.<br>Toque em <b>Comprar</b> para registrar a primeira compra.</div>';
+  }).join('') : '<div class="empty">Nenhuma posição ainda.<br>Toque em <b>Operar</b> para registrar a primeira compra.</div>';
 
   renderTradeHistory();
   renderDivHistory();
   renderIR();
+  updateSaldoDisplay();
   if($('autoRefreshSelect')) $('autoRefreshSelect').value = String(state.autoRefresh || 0);
   if($('cdiRateInput')) $('cdiRateInput').value = numToBR(state.cdiRate);
 }
 
 function renderTradeHistory() {
   const el = $('tradeHistory'); if (!el) return;
-  const history = state.trades.slice().reverse().slice(0, 20);
+  const history = state.trades.filter(t => t.ticker !== SALDO_TICKER).slice().reverse().slice(0, 20);
   el.innerHTML = history.length ? history.map(t => {
     const isRF = isRFAsset(t.ticker);
     const label = isRF ? (t.side === 'buy' ? 'Aplicação' : 'Resgate') : (t.side === 'buy' ? 'Compra' : 'Venda');
@@ -895,15 +1044,17 @@ function openMoneyModal(title, defaultValue) {
   });
 }
 
+/* ---------- Eventos ---------- */
 ['tradePrice','tradeRFValue','fees','divAmount','modalInput','cdiRateInput','sellPrice','sellFees','redeemValue'].forEach(id => { const el = $(id); if (el) attachMoneyMask(el); });
 
+$('addSaldoBtn')?.addEventListener('click', () => window.addSaldo());
+$('removeSaldoBtn')?.addEventListener('click', () => window.removeSaldo());
 $('refreshBtn')?.addEventListener('click', refreshQuotes);
 $('notaAnalyzeBtn')?.addEventListener('click', () => { analyzeNotaText($('notaInput')?.value || ''); });
 $('notaExampleBtn')?.addEventListener('click', () => {
-  if($('notaInput')) $('notaInput').value = `1 C PETR4 PETROBRAS PN N2 100 38,20 3.820,00 D
-1 V VALE3 VALE ON N1 50 62,15 3.107,50 C
-MXRF11 C 10 9,85 ${today()}
-HGLG11 Compra 5 165,50`;
+  if($('notaInput')) $('notaInput').value = `B3 RV LISTADO   V   VISTA   FII MAXI REN CI   @   1   9,07   9,07   C
+B3 RV LISTADO   V   VISTA   FII RBRR PAX CI ER   @   2   68,42   136,84   C
+B3 RV LISTADO   V   VISTA   FII TRX REAL CI   @   1   72,93   72,93   C`;
 });
 $('notaPdf')?.addEventListener('change', async e => { const f = e.target.files[0]; if (f) await handlePDFUpload(f); });
 
@@ -1047,7 +1198,7 @@ $('diagBtn')?.addEventListener('click', () => {
   try {
     const raw = localStorage.getItem(KEY) || '(vazio)';
     const parsed = raw !== '(vazio)' ? JSON.parse(raw) : null;
-    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo: ${(parsed.catalog || []).length}\nPreços: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%` : '(sem dados)';
+    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo: ${(parsed.catalog || []).length}\nPreços: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%\nSaldo: ${brl(getSaldoDisponivel())}` : '(sem dados)';
     alert('📦 Dados no aparelho:\n\n' + summary + '\n\nTamanho: ' + raw.length + ' caracteres');
   } catch (e) { alert('Erro: ' + e.message); }
 });
