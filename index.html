@@ -234,7 +234,6 @@
   </div>
 </div>
 
-<!-- Tela de detalhe do ativo -->
 <div id="assetDetail" class="asset-detail hidden">
   <div class="ad-header">
     <button type="button" class="ad-back" onclick="closeAssetDetail()">←</button>
@@ -259,9 +258,12 @@
     </div>
 
     <div class="ad-section">
-      <div class="ad-section-title">Preço (últimos 3 meses)</div>
-      <div class="ad-chart-wrap">
+      <div class="ad-section-title">Preço (últimos 3 meses) <span class="ad-hint">arraste para explorar</span></div>
+      <div class="ad-chart-wrap" id="adChartWrap">
         <svg id="adChart" class="ad-chart" viewBox="0 0 100 40" preserveAspectRatio="none"></svg>
+        <div id="adChartLine" class="ad-chart-line"></div>
+        <div id="adChartDot" class="ad-chart-dot"></div>
+        <div id="adChartTip" class="ad-chart-tip"></div>
         <div class="ad-chart-loading" id="adChartLoading">Carregando…</div>
       </div>
     </div>
@@ -285,6 +287,6 @@
   </div>
 </div>
 
-<script src="app.js?v=19"></script>
+<script src="app.js?v=20"></script>
 </body>
 </html>
