@@ -42,6 +42,7 @@
 <main>
   <section class="section" id="portfolio">
     <h2>Minha carteira</h2>
+    <p class="notice" style="margin-top:0;margin-bottom:12px">Carteira declarada — você registra suas operações e o enyao organiza a análise.</p>
     <button type="button" class="ghost" id="refreshBtn" style="width:100%;margin-bottom:12px">🔄 Atualizar cotações agora</button>
     <div id="evolution"></div>
     <div id="allocation"></div>
@@ -210,6 +211,13 @@
     <p class="notice">Usada para projetar o saldo da renda fixa automaticamente todo dia.</p>
     <label>Taxa CDI atual (% a.a.)</label>
     <input id="cdiRateInput" class="money-input" type="text" inputmode="numeric" placeholder="13,65">
+
+    <h2 style="margin-top:28px">Catálogo B3</h2>
+    <p class="notice">Sincroniza <b>todos os ativos da B3</b> (ações, FIIs, ETFs, BDRs, units) em 1 clique. Depois de sincronizar, sua busca encontrará qualquer ticker da bolsa. Gasta só 1 requisição da sua cota.</p>
+    <button id="syncB3Btn" class="primary-div" style="margin-top:12px">📥 Sincronizar catálogo B3</button>
+    <div id="b3Status" class="cdi-status"></div>
+    <button id="clearB3Btn" class="ghost" style="width:100%;margin-top:10px">Limpar catálogo B3</button>
+
     <h2 style="margin-top:28px">Backup</h2>
     <button id="exportBtn" class="primary">Exportar backup (JSON)</button>
     <label for="importFile" style="margin-top:16px">Importar backup</label>
@@ -343,6 +351,6 @@
   </div>
 </div>
 
-<script src="app.js?v=21"></script>
+<script src="app.js?v=22"></script>
 </body>
 </html>
