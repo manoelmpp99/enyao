@@ -15,240 +15,307 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-  <div class="brand">enyao</div>
-  <div id="heroSection">
-    <div class="hero">
-      <div class="hero-label">Patrimônio total</div>
-      <div class="hero-total-row">
-        <div class="hero-total" id="total">R$ 0,00</div>
-        <div class="hero-badge" id="totalPct">0,0%</div>
-      </div>
-      <div class="hero-updated" id="updatedAt"></div>
-      <div class="hero-stats">
-        <div class="hero-stat"><div class="hero-stat-label">Posições</div><div class="hero-stat-value" id="count">0</div></div>
-        <div class="hero-stat"><div class="hero-stat-label">Resultado</div><div class="hero-stat-value" id="profit">R$ 0,00</div></div>
-      </div>
-    </div>
-    <div class="div-hero">
-      <div class="div-hero-label">Proventos recebidos</div>
-      <div class="div-hero-stats">
-        <div class="div-stat"><div class="div-stat-label">Este mês</div><div class="div-stat-value" id="divMonth">R$ 0,00</div></div>
-        <div class="div-stat"><div class="div-stat-label">Este ano</div><div class="div-stat-value" id="divYear">R$ 0,00</div></div>
-      </div>
+
+<!-- ============ FLUXO DE AUTENTICAÇÃO ============ -->
+<div id="authFlow" class="auth-flow hidden">
+
+  <div id="screenSplash" class="auth-screen">
+    <div class="auth-splash-brand">enyao</div>
+    <div class="auth-splash-tag">INVISTA. EVOLUA. CONSTRUA.</div>
+  </div>
+
+  <div id="screenWelcome" class="auth-screen hidden">
+    <div class="auth-bg-blob"></div>
+    <div class="auth-card">
+      <div class="auth-brand">enyao</div>
+      <div class="auth-tagline">Acompanhe, analise e evolua seus investimentos em um só lugar.</div>
+      <button type="button" class="auth-cta" onclick="authScreen('signup')">Criar conta</button>
+      <button type="button" class="auth-cta-ghost" onclick="authScreen('login')">Já tenho conta</button>
+      <button type="button" class="auth-guest" onclick="enterAsGuest()">Continuar sem conta</button>
+      <div class="auth-legal">Seus dados ficam salvos neste aparelho. Você pode criar conta depois.</div>
     </div>
   </div>
-</header>
-<main>
-  <section class="section" id="portfolio">
-    <h2>Minha carteira</h2>
-    <p class="notice" style="margin-top:0;margin-bottom:12px">Carteira declarada — você registra suas operações e o enyao organiza a análise.</p>
-    <button type="button" class="ghost" id="refreshBtn" style="width:100%;margin-bottom:12px">🔄 Atualizar cotações agora</button>
-    <div id="evolution"></div>
-    <div id="allocation"></div>
-    <div id="assets"></div>
-  </section>
 
-  <section class="section hidden" id="trade">
-    <div class="saldo-card">
-      <div class="saldo-card-inner">
-        <div class="saldo-icon">💰</div>
-        <div class="saldo-content">
-          <div class="saldo-label">Saldo disponível</div>
-          <div class="saldo-valor" id="saldoDisponivel">R$ 0,00</div>
-          <div class="saldo-hint">Aguardando ser investido</div>
+  <div id="screenLogin" class="auth-screen hidden">
+    <div class="auth-bg-blob"></div>
+    <div class="auth-card">
+      <button type="button" class="auth-back" onclick="authScreen('welcome')">←</button>
+      <div class="auth-title">Entrar</div>
+      <div class="auth-subtitle">Acesse sua carteira</div>
+      <label for="loginEmail">E-mail</label>
+      <input id="loginEmail" type="email" autocomplete="email" inputmode="email" placeholder="voce@email.com">
+      <label for="loginPassword">Senha</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Sua senha">
+      <div id="loginError" class="auth-error hidden"></div>
+      <button type="button" class="auth-cta" id="btnLogin">Entrar</button>
+      <button type="button" class="auth-link" onclick="authScreen('signup')">Não tem conta? Criar agora</button>
+    </div>
+  </div>
+
+  <div id="screenSignup" class="auth-screen hidden">
+    <div class="auth-bg-blob"></div>
+    <div class="auth-card">
+      <button type="button" class="auth-back" onclick="authScreen('welcome')">←</button>
+      <div class="auth-title">Criar conta</div>
+      <div class="auth-subtitle">Comece a organizar sua carteira</div>
+      <label for="signupName">Nome</label>
+      <input id="signupName" type="text" autocomplete="name" placeholder="Como devemos te chamar?">
+      <label for="signupEmail">E-mail</label>
+      <input id="signupEmail" type="email" autocomplete="email" inputmode="email" placeholder="voce@email.com">
+      <label for="signupPassword">Senha</label>
+      <input id="signupPassword" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      <label for="signupPassword2">Confirmar senha</label>
+      <input id="signupPassword2" type="password" autocomplete="new-password" placeholder="Repita a senha">
+      <div id="signupError" class="auth-error hidden"></div>
+      <button type="button" class="auth-cta" id="btnSignup">Criar conta</button>
+      <button type="button" class="auth-link" onclick="authScreen('login')">Já tem conta? Entrar</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ APP PRINCIPAL ============ -->
+<div id="appShell" class="app-shell hidden">
+  <header>
+    <div class="brand">enyao</div>
+    <div id="heroSection">
+      <div class="hero">
+        <div class="hero-label">Patrimônio total</div>
+        <div class="hero-total-row">
+          <div class="hero-total" id="total">R$ 0,00</div>
+          <div class="hero-badge" id="totalPct">0,0%</div>
+        </div>
+        <div class="hero-updated" id="updatedAt"></div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="hero-stat-label">Posições</div><div class="hero-stat-value" id="count">0</div></div>
+          <div class="hero-stat"><div class="hero-stat-label">Resultado</div><div class="hero-stat-value" id="profit">R$ 0,00</div></div>
         </div>
       </div>
-      <div class="saldo-actions">
-        <button type="button" class="saldo-btn" id="addSaldoBtn"><span>+</span> Adicionar</button>
-        <button type="button" class="saldo-btn" id="removeSaldoBtn"><span>−</span> Remover</button>
-      </div>
-    </div>
-
-    <h2 style="margin-top:24px">Registrar compra</h2>
-    <label for="assetSearch">Ativo</label>
-    <input id="assetSearch" placeholder="Ticker ou nome…" autocomplete="off">
-    <div id="suggestions" class="searchResults hidden"></div>
-    <div id="selectedBox" class="result-box hidden">
-      <strong id="selectedTicker"></strong>
-      <div class="small" id="selectedName"></div>
-      <div class="small" id="selectedType"></div>
-    </div>
-    <form id="tradeForm">
-      <input type="hidden" id="chosenTicker">
-      <input type="hidden" id="chosenType">
-      <div id="tradeRegularFields">
-        <div class="grid">
-          <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="text" inputmode="decimal" placeholder="10"></div>
-          <div><label for="tradePrice">Preço unitário</label><input id="tradePrice" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
+      <div class="div-hero">
+        <div class="div-hero-label">Proventos recebidos</div>
+        <div class="div-hero-stats">
+          <div class="div-stat"><div class="div-stat-label">Este mês</div><div class="div-stat-value" id="divMonth">R$ 0,00</div></div>
+          <div class="div-stat"><div class="div-stat-label">Este ano</div><div class="div-stat-value" id="divYear">R$ 0,00</div></div>
         </div>
       </div>
-      <div id="tradeRFFields" class="hidden">
-        <label for="tradeRFValue">Valor aplicado</label>
-        <input id="tradeRFValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
-        <label for="tradeRFPct">Percentual do CDI (%)</label>
-        <input id="tradeRFPct" type="text" inputmode="decimal" value="100" placeholder="100">
-      </div>
-      <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
-      <label for="fees">Custos (opcional)</label><input id="fees" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
-      <button type="submit" class="primary" style="margin-top:18px">Registrar compra</button>
-    </form>
-
-    <h2 style="margin-top:28px">Importar nota de corretagem</h2>
-    <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>.</p>
-    <label for="notaPdf" style="margin-top:12px">Arquivo PDF</label>
-    <input type="file" id="notaPdf" accept=".pdf,application/pdf">
-    <div id="pdfStatus" class="import-status"></div>
-    <label for="notaInput">Ou cole o texto</label>
-    <textarea id="notaInput" class="import-area" placeholder="Cole aqui o texto da nota…"></textarea>
-    <div class="grid" style="margin-top:10px">
-      <button type="button" id="notaAnalyzeBtn" class="ghost">Analisar texto</button>
-      <button type="button" id="notaExampleBtn" class="ghost">Ver exemplo</button>
     </div>
-    <div id="notaPreview" class="hidden" style="margin-top:12px"></div>
+  </header>
+  <main>
+    <section class="section" id="portfolio">
+      <h2>Minha carteira</h2>
+      <p class="notice" style="margin-top:0;margin-bottom:12px">Carteira declarada — você registra suas operações e o enyao organiza a análise.</p>
+      <button type="button" class="ghost" id="refreshBtn" style="width:100%;margin-bottom:12px">🔄 Atualizar cotações agora</button>
+      <div id="evolution"></div>
+      <div id="allocation"></div>
+      <div id="assets"></div>
+    </section>
 
-    <h2 style="margin-top:24px">Histórico de operações</h2>
-    <div id="tradeHistory"></div>
-  </section>
-
-  <section class="section hidden" id="dividends">
-    <h2>Proventos</h2>
-    <button type="button" class="primary-div" id="toggleDivForm">+ Registrar provento</button>
-    <div id="divFormBox" class="hidden" style="margin-top:14px">
-      <label for="divTickerSearch">Ativo</label>
-      <input id="divTickerSearch" placeholder="Ticker…" autocomplete="off">
-      <div id="divSuggestions" class="searchResults hidden"></div>
-      <div id="divSelectedBox" class="result-box hidden">
-        <strong id="divSelectedTicker"></strong>
-        <div class="small" id="divSelectedName"></div>
-      </div>
-      <form id="divForm">
-        <input type="hidden" id="divChosenTicker">
-        <div class="grid">
-          <div><label for="divAmount">Valor</label><input id="divAmount" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
-          <div><label for="divDate">Data</label><input id="divDate" type="date" required></div>
+    <section class="section hidden" id="trade">
+      <div class="saldo-card">
+        <div class="saldo-card-inner">
+          <div class="saldo-icon">💰</div>
+          <div class="saldo-content">
+            <div class="saldo-label">Saldo disponível</div>
+            <div class="saldo-valor" id="saldoDisponivel">R$ 0,00</div>
+            <div class="saldo-hint">Aguardando ser investido</div>
+          </div>
         </div>
-        <label for="divKind">Tipo</label>
-        <select id="divKind"><option>Dividendo</option><option>JCP</option><option>Rendimento</option><option>Outro</option></select>
-        <button type="submit" class="primary-div" style="margin-top:16px">Salvar provento</button>
+        <div class="saldo-actions">
+          <button type="button" class="saldo-btn" id="addSaldoBtn"><span>+</span> Adicionar</button>
+          <button type="button" class="saldo-btn" id="removeSaldoBtn"><span>−</span> Remover</button>
+        </div>
+      </div>
+
+      <h2 style="margin-top:24px">Registrar compra</h2>
+      <label for="assetSearch">Ativo</label>
+      <input id="assetSearch" placeholder="Ticker ou nome…" autocomplete="off">
+      <div id="suggestions" class="searchResults hidden"></div>
+      <div id="selectedBox" class="result-box hidden">
+        <strong id="selectedTicker"></strong>
+        <div class="small" id="selectedName"></div>
+        <div class="small" id="selectedType"></div>
+      </div>
+      <form id="tradeForm">
+        <input type="hidden" id="chosenTicker">
+        <input type="hidden" id="chosenType">
+        <div id="tradeRegularFields">
+          <div class="grid">
+            <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="text" inputmode="decimal" placeholder="10"></div>
+            <div><label for="tradePrice">Preço unitário</label><input id="tradePrice" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
+          </div>
+        </div>
+        <div id="tradeRFFields" class="hidden">
+          <label for="tradeRFValue">Valor aplicado</label>
+          <input id="tradeRFValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+          <label for="tradeRFPct">Percentual do CDI (%)</label>
+          <input id="tradeRFPct" type="text" inputmode="decimal" value="100" placeholder="100">
+        </div>
+        <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
+        <label for="fees">Custos (opcional)</label><input id="fees" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+        <button type="submit" class="primary" style="margin-top:18px">Registrar compra</button>
       </form>
-    </div>
-    <h2 style="margin-top:24px">Histórico</h2>
-    <div id="divHistory"></div>
-  </section>
 
-  <section class="section hidden" id="tools">
-    <h2>Ferramentas</h2>
-
-    <div class="tools-tabs">
-      <button type="button" class="tools-tab active" data-tool="perf">📊 Performance</button>
-      <button type="button" class="tools-tab" data-tool="sim">🧮 Simulador</button>
-      <button type="button" class="tools-tab" data-tool="goals">🎯 Metas</button>
-      <button type="button" class="tools-tab" data-tool="report">📄 Relatório</button>
-      <button type="button" class="tools-tab" data-tool="ir">🧾 IR</button>
-    </div>
-
-    <div class="tool-panel" id="toolPerf">
-      <p class="notice" style="margin-bottom:14px">Seus ativos ordenados por rentabilidade. Cálculo: (valor atual − custo) ÷ custo.</p>
-      <div id="perfContent"></div>
-    </div>
-
-    <div class="tool-panel hidden" id="toolSim">
-      <p class="notice" style="margin-bottom:14px">Simule quanto seu dinheiro pode render com aportes mensais a juros compostos.</p>
-      <label for="simInitial">Valor inicial (R$)</label>
-      <input id="simInitial" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
-      <label for="simMonthly">Aporte mensal (R$)</label>
-      <input id="simMonthly" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
-      <div class="grid">
-        <div><label for="simMonths">Prazo (meses)</label><input id="simMonths" type="number" min="1" max="600" value="120"></div>
-        <div><label for="simRate">Taxa (% a.m.)</label><input id="simRate" type="text" inputmode="decimal" value="0,80"></div>
+      <h2 style="margin-top:28px">Importar nota de corretagem</h2>
+      <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>.</p>
+      <label for="notaPdf" style="margin-top:12px">Arquivo PDF</label>
+      <input type="file" id="notaPdf" accept=".pdf,application/pdf">
+      <div id="pdfStatus" class="import-status"></div>
+      <label for="notaInput">Ou cole o texto</label>
+      <textarea id="notaInput" class="import-area" placeholder="Cole aqui o texto da nota…"></textarea>
+      <div class="grid" style="margin-top:10px">
+        <button type="button" id="notaAnalyzeBtn" class="ghost">Analisar texto</button>
+        <button type="button" id="notaExampleBtn" class="ghost">Ver exemplo</button>
       </div>
-      <button type="button" id="simCalcBtn" class="primary" style="margin-top:14px">Calcular</button>
-      <div id="simResult" class="sim-result hidden"></div>
-    </div>
+      <div id="notaPreview" class="hidden" style="margin-top:12px"></div>
 
-    <div class="tool-panel hidden" id="toolGoals">
-      <p class="notice" style="margin-bottom:14px">Defina metas de patrimônio e acompanhe o progresso.</p>
-      <button type="button" class="primary-div" id="addGoalBtn" style="margin-bottom:14px">+ Nova meta</button>
-      <div id="goalFormBox" class="hidden" style="margin-bottom:14px">
-        <label for="goalName">Nome da meta</label>
-        <input id="goalName" placeholder="Ex.: Independência financeira">
-        <div class="grid">
-          <div><label for="goalValue">Valor alvo (R$)</label><input id="goalValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
-          <div><label for="goalDate">Data alvo</label><input id="goalDate" type="date"></div>
+      <h2 style="margin-top:24px">Histórico de operações</h2>
+      <div id="tradeHistory"></div>
+    </section>
+
+    <section class="section hidden" id="dividends">
+      <h2>Proventos</h2>
+      <button type="button" class="primary-div" id="toggleDivForm">+ Registrar provento</button>
+      <div id="divFormBox" class="hidden" style="margin-top:14px">
+        <label for="divTickerSearch">Ativo</label>
+        <input id="divTickerSearch" placeholder="Ticker…" autocomplete="off">
+        <div id="divSuggestions" class="searchResults hidden"></div>
+        <div id="divSelectedBox" class="result-box hidden">
+          <strong id="divSelectedTicker"></strong>
+          <div class="small" id="divSelectedName"></div>
         </div>
-        <button type="button" id="saveGoalBtn" class="primary" style="margin-top:12px">Salvar meta</button>
+        <form id="divForm">
+          <input type="hidden" id="divChosenTicker">
+          <div class="grid">
+            <div><label for="divAmount">Valor</label><input id="divAmount" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
+            <div><label for="divDate">Data</label><input id="divDate" type="date" required></div>
+          </div>
+          <label for="divKind">Tipo</label>
+          <select id="divKind"><option>Dividendo</option><option>JCP</option><option>Rendimento</option><option>Outro</option></select>
+          <button type="submit" class="primary-div" style="margin-top:16px">Salvar provento</button>
+        </form>
       </div>
-      <div id="goalsList"></div>
-    </div>
+      <h2 style="margin-top:24px">Histórico</h2>
+      <div id="divHistory"></div>
+    </section>
 
-    <div class="tool-panel hidden" id="toolReport">
-      <p class="notice" style="margin-bottom:14px">Gera uma imagem com o resumo do mês (patrimônio, proventos, aportes e top ativos). Salve ou compartilhe.</p>
-      <label for="reportMonth">Mês</label>
-      <input id="reportMonth" type="month">
-      <button type="button" id="genReportBtn" class="primary" style="margin-top:14px">📸 Gerar imagem do relatório</button>
-      <div id="reportPreview" class="report-preview hidden">
-        <img id="reportImage" alt="Relatório mensal">
-        <a id="reportDownload" class="ghost" download="enyao-relatorio.png" style="display:block;margin-top:12px;text-align:center;text-decoration:none;padding:13px;border-radius:14px;background:var(--surface-2);color:var(--text);font-weight:700">💾 Baixar imagem</a>
+    <section class="section hidden" id="tools">
+      <h2>Ferramentas</h2>
+      <div class="tools-tabs">
+        <button type="button" class="tools-tab active" data-tool="perf">📊 Performance</button>
+        <button type="button" class="tools-tab" data-tool="sim">🧮 Simulador</button>
+        <button type="button" class="tools-tab" data-tool="goals">🎯 Metas</button>
+        <button type="button" class="tools-tab" data-tool="report">📄 Relatório</button>
+        <button type="button" class="tools-tab" data-tool="ir">🧾 IR</button>
       </div>
-    </div>
 
-    <div class="tool-panel hidden" id="toolIR">
-      <p class="notice">Estimativa com base nas vendas registradas. Ações isentas até R$ 20.000/mês (15% acima); FIIs 20%; ETFs 15%. Não considera prejuízo acumulado nem day trade.</p>
-      <div id="irFilter"></div>
-      <div id="irContent"></div>
-    </div>
-  </section>
+      <div class="tool-panel" id="toolPerf">
+        <p class="notice" style="margin-bottom:14px">Seus ativos ordenados por rentabilidade. Cálculo: (valor atual − custo) ÷ custo.</p>
+        <div id="perfContent"></div>
+      </div>
 
-  <section class="section hidden" id="backup">
-    <h2>Ajustes</h2>
-    <label style="margin-top:0">Auto-atualização de cotações (ações/FIIs)</label>
-    <select id="autoRefreshSelect">
-      <option value="0">Desativada</option><option value="5">A cada 5 minutos</option>
-      <option value="15">A cada 15 minutos</option><option value="30">A cada 30 minutos</option>
-    </select>
-    <h2 style="margin-top:24px">Taxa CDI</h2>
-    <p class="notice">Usada para projetar o saldo da renda fixa automaticamente todo dia.</p>
-    <label>Taxa CDI atual (% a.a.)</label>
-    <input id="cdiRateInput" class="money-input" type="text" inputmode="numeric" placeholder="13,65">
+      <div class="tool-panel hidden" id="toolSim">
+        <p class="notice" style="margin-bottom:14px">Simule quanto seu dinheiro pode render com aportes mensais a juros compostos.</p>
+        <label for="simInitial">Valor inicial (R$)</label>
+        <input id="simInitial" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+        <label for="simMonthly">Aporte mensal (R$)</label>
+        <input id="simMonthly" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+        <div class="grid">
+          <div><label for="simMonths">Prazo (meses)</label><input id="simMonths" type="number" min="1" max="600" value="120"></div>
+          <div><label for="simRate">Taxa (% a.m.)</label><input id="simRate" type="text" inputmode="decimal" value="0,80"></div>
+        </div>
+        <button type="button" id="simCalcBtn" class="primary" style="margin-top:14px">Calcular</button>
+        <div id="simResult" class="sim-result hidden"></div>
+      </div>
 
-    <h2 style="margin-top:28px">Catálogo B3</h2>
-    <p class="notice">Sincroniza <b>todos os ativos da B3</b> (ações, FIIs, ETFs, BDRs, units) em 1 clique. Depois de sincronizar, sua busca encontrará qualquer ticker da bolsa. Gasta só 1 requisição da sua cota.</p>
-    <button id="syncB3Btn" class="primary-div" style="margin-top:12px">📥 Sincronizar catálogo B3</button>
-    <div id="b3Status" class="cdi-status"></div>
-    <button id="clearB3Btn" class="ghost" style="width:100%;margin-top:10px">Limpar catálogo B3</button>
+      <div class="tool-panel hidden" id="toolGoals">
+        <p class="notice" style="margin-bottom:14px">Defina metas de patrimônio e acompanhe o progresso.</p>
+        <button type="button" class="primary-div" id="addGoalBtn" style="margin-bottom:14px">+ Nova meta</button>
+        <div id="goalFormBox" class="hidden" style="margin-bottom:14px">
+          <label for="goalName">Nome da meta</label>
+          <input id="goalName" placeholder="Ex.: Independência financeira">
+          <div class="grid">
+            <div><label for="goalValue">Valor alvo (R$)</label><input id="goalValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
+            <div><label for="goalDate">Data alvo</label><input id="goalDate" type="date"></div>
+          </div>
+          <button type="button" id="saveGoalBtn" class="primary" style="margin-top:12px">Salvar meta</button>
+        </div>
+        <div id="goalsList"></div>
+      </div>
 
-    <h2 style="margin-top:28px">Backup</h2>
-    <button id="exportBtn" class="primary">Exportar backup (JSON)</button>
-    <label for="importFile" style="margin-top:16px">Importar backup</label>
-    <input type="file" id="importFile" accept=".json,application/json">
-    <h2 style="margin-top:28px">Diagnóstico</h2>
-    <button id="diagBtn" class="ghost" style="width:100%">Ver dados salvos</button>
-    <button id="clearBtn" class="danger" style="margin-top:18px">Apagar todos os dados</button>
-  </section>
-</main>
-<nav class="tabs"><div class="tabs-inner">
-  <button type="button" class="active" data-tab="portfolio" onclick="showTab('portfolio')">
-    <svg viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7"/></svg>
-    <span>Carteira</span>
-  </button>
-  <button type="button" data-tab="trade" onclick="showTab('trade')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
-    <span>Operar</span>
-  </button>
-  <button type="button" data-tab="dividends" onclick="showTab('dividends')">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    <span>Proventos</span>
-  </button>
-  <button type="button" data-tab="tools" onclick="showTab('tools')">
-    <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1 5 5l-9.4 9.4a2.8 2.8 0 0 1-4-4z"/><path d="M15 9l-9 9"/></svg>
-    <span>Ferramentas</span>
-  </button>
-  <button type="button" data-tab="backup" onclick="showTab('backup')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    <span>Ajustes</span>
-  </button>
-</div></nav>
+      <div class="tool-panel hidden" id="toolReport">
+        <p class="notice" style="margin-bottom:14px">Gera uma imagem com o resumo do mês (patrimônio, proventos, aportes e top ativos). Salve ou compartilhe.</p>
+        <label for="reportMonth">Mês</label>
+        <input id="reportMonth" type="month">
+        <button type="button" id="genReportBtn" class="primary" style="margin-top:14px">📸 Gerar imagem do relatório</button>
+        <div id="reportPreview" class="report-preview hidden">
+          <img id="reportImage" alt="Relatório mensal">
+          <a id="reportDownload" class="ghost" download="enyao-relatorio.png" style="display:block;margin-top:12px;text-align:center;text-decoration:none;padding:13px;border-radius:14px;background:var(--surface-2);color:var(--text);font-weight:700">💾 Baixar imagem</a>
+        </div>
+      </div>
+
+      <div class="tool-panel hidden" id="toolIR">
+        <p class="notice">Estimativa com base nas vendas registradas. Ações isentas até R$ 20.000/mês (15% acima); FIIs 20%; ETFs 15%. Não considera prejuízo acumulado nem day trade.</p>
+        <div id="irFilter"></div>
+        <div id="irContent"></div>
+      </div>
+    </section>
+
+    <section class="section hidden" id="backup">
+      <h2>Ajustes</h2>
+
+      <h2 style="margin-top:8px">Sua conta</h2>
+      <div id="accountBox"></div>
+
+      <label style="margin-top:24px">Auto-atualização de cotações (ações/FIIs)</label>
+      <select id="autoRefreshSelect">
+        <option value="0">Desativada</option><option value="5">A cada 5 minutos</option>
+        <option value="15">A cada 15 minutos</option><option value="30">A cada 30 minutos</option>
+      </select>
+
+      <h2 style="margin-top:24px">Taxa CDI</h2>
+      <p class="notice">Usada para projetar o saldo da renda fixa automaticamente todo dia.</p>
+      <label>Taxa CDI atual (% a.a.)</label>
+      <input id="cdiRateInput" class="money-input" type="text" inputmode="numeric" placeholder="13,65">
+
+      <h2 style="margin-top:28px">Catálogo B3</h2>
+      <p class="notice">Sincroniza <b>todos os ativos da B3</b> (ações, FIIs, ETFs, BDRs, units) em 1 clique. Depois de sincronizar, sua busca encontrará qualquer ticker da bolsa. Gasta só 1 requisição da sua cota.</p>
+      <button id="syncB3Btn" class="primary-div" style="margin-top:12px">📥 Sincronizar catálogo B3</button>
+      <div id="b3Status" class="cdi-status"></div>
+      <button id="clearB3Btn" class="ghost" style="width:100%;margin-top:10px">Limpar catálogo B3</button>
+
+      <h2 style="margin-top:28px">Backup</h2>
+      <button id="exportBtn" class="primary">Exportar backup (JSON)</button>
+      <label for="importFile" style="margin-top:16px">Importar backup</label>
+      <input type="file" id="importFile" accept=".json,application/json">
+
+      <h2 style="margin-top:28px">Diagnóstico</h2>
+      <button id="diagBtn" class="ghost" style="width:100%">Ver dados salvos</button>
+      <button id="clearBtn" class="danger" style="margin-top:18px">Apagar todos os dados</button>
+    </section>
+  </main>
+  <nav class="tabs"><div class="tabs-inner">
+    <button type="button" class="active" data-tab="portfolio" onclick="showTab('portfolio')">
+      <svg viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7"/></svg>
+      <span>Carteira</span>
+    </button>
+    <button type="button" data-tab="trade" onclick="showTab('trade')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+      <span>Operar</span>
+    </button>
+    <button type="button" data-tab="dividends" onclick="showTab('dividends')">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Proventos</span>
+    </button>
+    <button type="button" data-tab="tools" onclick="showTab('tools')">
+      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1 5 5l-9.4 9.4a2.8 2.8 0 0 1-4-4z"/><path d="M15 9l-9 9"/></svg>
+      <span>Ferramentas</span>
+    </button>
+    <button type="button" data-tab="backup" onclick="showTab('backup')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Ajustes</span>
+    </button>
+  </div></nav>
+</div>
 
 <div id="modalOverlay" class="modal-overlay hidden">
   <div class="modal-card">
@@ -313,14 +380,12 @@
       <div class="ad-hero-value" id="adValue">R$ 0,00</div>
       <div class="ad-hero-pct" id="adValuePct"></div>
     </div>
-
     <div class="ad-grid">
       <div class="ad-stat"><div class="ad-stat-l" id="adAvgLabel">Preço médio</div><div class="ad-stat-v" id="adAvg">—</div></div>
       <div class="ad-stat"><div class="ad-stat-l">Quantidade</div><div class="ad-stat-v" id="adQty">—</div></div>
       <div class="ad-stat"><div class="ad-stat-l">Resultado</div><div class="ad-stat-v" id="adResult">—</div></div>
       <div class="ad-stat"><div class="ad-stat-l">Proventos 12m</div><div class="ad-stat-v" id="adDiv12m">—</div></div>
     </div>
-
     <div class="ad-section">
       <div class="ad-section-title">Preço (últimos 3 meses) <span class="ad-hint">arraste para explorar</span></div>
       <div class="ad-chart-wrap" id="adChartWrap">
@@ -331,17 +396,14 @@
         <div class="ad-chart-loading" id="adChartLoading">Carregando…</div>
       </div>
     </div>
-
     <div class="ad-section">
       <div class="ad-section-title">Minhas operações</div>
       <div id="adTrades"></div>
     </div>
-
     <div class="ad-section">
       <div class="ad-section-title">Proventos recebidos</div>
       <div id="adDividends"></div>
     </div>
-
     <div class="ad-actions">
       <button type="button" class="primary" onclick="adActionBuy()">+ Comprar mais</button>
       <button type="button" class="ghost" onclick="adActionSell()">Vender / Resgatar</button>
@@ -351,6 +413,6 @@
   </div>
 </div>
 
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
