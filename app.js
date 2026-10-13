@@ -78,7 +78,8 @@ const isRFTicker = t => RF_TICKERS.includes(t);
 let state = {
   catalog: [], trades: [], dividends: [], prices: {},
   apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '',
-  cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {}
+  cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {},
+  goals: []
 };
 try {
   const raw = localStorage.getItem(KEY);
@@ -95,6 +96,7 @@ try {
     if (s.rfLastProjection) state.rfLastProjection = s.rfLastProjection;
     if (Array.isArray(s.history)) state.history = s.history;
     if (s.priceHistory && typeof s.priceHistory === 'object') state.priceHistory = s.priceHistory;
+    if (Array.isArray(s.goals)) state.goals = s.goals;
   }
 } catch (e) { console.warn('Erro lendo estado', e); }
 state.apiKey = DEFAULT_API_KEY;
@@ -823,10 +825,7 @@ function openAssetDetail(ticker) {
       const detail = isRF ? brl(Math.abs(t.qty * t.price)) : qtyToBR(t.qty) + ' × ' + brl(t.price);
       const total = Math.abs(t.qty * t.price) + (t.fees || 0);
       return `<div class="ad-trade-row">
-        <div>
-          <span class="ad-badge ${isBuy ? 'buy' : 'sell'}">${label}</span>
-          <div class="meta">${esc(t.date)}</div>
-        </div>
+        <div><span class="ad-badge ${isBuy ? 'buy' : 'sell'}">${label}</span><div class="meta">${esc(t.date)}</div></div>
         <div class="value">${brl(total)}<small>${detail}</small></div>
       </div>`;
     }).join('');
@@ -838,13 +837,9 @@ function openAssetDetail(ticker) {
   if (divs.length) {
     $('adDividends').innerHTML = divs.map(d => `
       <div class="ad-trade-row">
-        <div>
-          <span class="ad-badge buy">${esc(d.kind || 'Dividendo')}</span>
-          <div class="meta">${esc(d.date)}</div>
-        </div>
+        <div><span class="ad-badge buy">${esc(d.kind || 'Dividendo')}</span><div class="meta">${esc(d.date)}</div></div>
         <div class="value">${brl(d.amount)}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
   } else {
     $('adDividends').innerHTML = '<div class="empty" style="padding:14px">Nenhum provento registrado.</div>';
   }
@@ -871,8 +866,7 @@ async function fetchPriceHistory(ticker) {
   const cached = state.priceHistory[ticker];
   if (cached && cached.ts && (Date.now() - cached.ts) < 3600000) return cached.data;
   try {
-    const url = 'https://brapi.dev/api/quote/' + encodeURIComponent(ticker)
-      + '?range=3mo&interval=1d&token=' + encodeURIComponent(state.apiKey);
+    const url = 'https://brapi.dev/api/quote/' + encodeURIComponent(ticker) + '?range=3mo&interval=1d&token=' + encodeURIComponent(state.apiKey);
     const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if (!r.ok) return null;
     const j = await r.json();
@@ -886,15 +880,12 @@ async function fetchPriceHistory(ticker) {
 
 function normalizeDate(d) {
   if (typeof d === 'number') {
-    let ts = d;
-    if (ts > 1e10) ts = Math.floor(ts / 1000);
-    const date = new Date(ts * 1000);
-    return date.toISOString().slice(0, 10);
+    let ts = d; if (ts > 1e10) ts = Math.floor(ts / 1000);
+    const date = new Date(ts * 1000); return date.toISOString().slice(0, 10);
   }
   if (typeof d === 'string') {
     if (/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0, 10);
-    const parsed = new Date(d);
-    if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+    const parsed = new Date(d); if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
   }
   return '';
 }
@@ -909,10 +900,7 @@ async function loadAssetChart(ticker) {
   loading.textContent = 'Carregando…';
   currentChartData = null;
 
-  if (isRFAsset(ticker)) {
-    loading.textContent = 'Renda fixa não tem gráfico de preço';
-    return;
-  }
+  if (isRFAsset(ticker)) { loading.textContent = 'Renda fixa não tem gráfico de preço'; return; }
 
   const hist = await fetchPriceHistory(ticker);
   loading.style.display = 'none';
@@ -922,10 +910,7 @@ async function loadAssetChart(ticker) {
     return;
   }
 
-  const points = hist
-    .map(h => ({ date: normalizeDate(h.date), close: Number(h.close) }))
-    .filter(p => Number.isFinite(p.close) && p.close > 0);
-
+  const points = hist.map(h => ({ date: normalizeDate(h.date), close: Number(h.close) })).filter(p => Number.isFinite(p.close) && p.close > 0);
   if (points.length < 2) {
     svg.innerHTML = '<text x="50" y="20" text-anchor="middle" fill="#8a8a9c" font-size="3.5">Sem dados suficientes</text>';
     return;
@@ -933,8 +918,7 @@ async function loadAssetChart(ticker) {
 
   const prices = points.map(p => p.close);
   const w = 100, height = 40, padY = 2.5;
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
+  const min = Math.min(...prices), max = Math.max(...prices);
   const range = (max - min) || 1;
   const first = prices[0], last = prices[prices.length - 1];
   const positive = last >= first;
@@ -954,14 +938,8 @@ async function loadAssetChart(ticker) {
 
   svg.innerHTML = `
     <defs>
-      <linearGradient id="${uid}-line" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="${c2}"/>
-        <stop offset="100%" stop-color="${c1}"/>
-      </linearGradient>
-      <linearGradient id="${uid}-fill" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${c1}" stop-opacity="0.3"/>
-        <stop offset="100%" stop-color="${c1}" stop-opacity="0"/>
-      </linearGradient>
+      <linearGradient id="${uid}-line" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${c2}"/><stop offset="100%" stop-color="${c1}"/></linearGradient>
+      <linearGradient id="${uid}-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${c1}" stop-opacity="0.3"/><stop offset="100%" stop-color="${c1}" stop-opacity="0"/></linearGradient>
     </defs>
     <path d="${areaPath}" fill="url(#${uid}-fill)"/>
     <path d="${linePath}" fill="none" stroke="url(#${uid}-line)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
@@ -970,7 +948,6 @@ async function loadAssetChart(ticker) {
   currentChartData = { points, min, max, range, padY, height, w };
 }
 
-/* ---------- Interação com o gráfico ---------- */
 (function setupChartInteraction(){
   let wrap = null;
   let touchActive = false;
@@ -983,49 +960,31 @@ async function loadAssetChart(ticker) {
     let x = clientX - rect.left;
     x = Math.max(0, Math.min(rect.width, x));
     const pctX = x / rect.width;
-
     const pts = currentChartData.points;
     const idx = Math.round(pctX * (pts.length - 1));
     const point = pts[idx];
     if (!point) return;
-
     const xPct = (idx / (pts.length - 1)) * 100;
-    const yViewBox = currentChartData.height - currentChartData.padY
-      - ((point.close - currentChartData.min) / currentChartData.range) * (currentChartData.height - currentChartData.padY * 2);
+    const yViewBox = currentChartData.height - currentChartData.padY - ((point.close - currentChartData.min) / currentChartData.range) * (currentChartData.height - currentChartData.padY * 2);
     const yPct = (yViewBox / currentChartData.height) * 100;
-
-    const line = $('adChartLine');
-    const dot = $('adChartDot');
-    const tip = $('adChartTip');
+    const line = $('adChartLine'), dot = $('adChartDot'), tip = $('adChartTip');
     if (!line || !dot || !tip) return;
-
-    line.style.left = xPct + '%';
-    line.style.opacity = '1';
-    dot.style.left = xPct + '%';
-    dot.style.top = yPct + '%';
-    dot.style.opacity = '1';
-
+    line.style.left = xPct + '%'; line.style.opacity = '1';
+    dot.style.left = xPct + '%'; dot.style.top = yPct + '%'; dot.style.opacity = '1';
     const price = point.close.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     let dateStr = point.date || '';
-    if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      const [y, m, d] = dateStr.split('-');
-      dateStr = `${d}/${m}/${y}`;
-    }
+    if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) { const [y, m, d] = dateStr.split('-'); dateStr = `${d}/${m}/${y}`; }
     tip.innerHTML = `<div class="ad-tip-price">${price}</div><div class="ad-tip-date">${dateStr}</div>`;
-    tip.style.left = xPct + '%';
-    tip.style.opacity = '1';
+    tip.style.left = xPct + '%'; tip.style.opacity = '1';
   }
 
   function onTouchStart(e) {
     wrap = $('adChartWrap');
     if (!wrap || !currentChartData) return;
     const t = e.touches[0];
-    startX = t.clientX;
-    startY = t.clientY;
-    touchActive = true;
-    lockedHorizontal = false;
+    startX = t.clientX; startY = t.clientY;
+    touchActive = true; lockedHorizontal = false;
   }
-
   function onTouchMove(e) {
     if (!touchActive || !wrap || !currentChartData) return;
     const t = e.touches[0];
@@ -1036,33 +995,16 @@ async function loadAssetChart(ticker) {
       else if (dy > 8) { touchActive = false; return; }
       else { return; }
     }
-    if (lockedHorizontal) {
-      if (e.cancelable) e.preventDefault();
-      updateOverlays(t.clientX);
-    }
+    if (lockedHorizontal) { if (e.cancelable) e.preventDefault(); updateOverlays(t.clientX); }
   }
-
-  function onTouchEnd() {
-    touchActive = false;
-    lockedHorizontal = false;
-    hideChartOverlays();
-  }
-
+  function onTouchEnd() { touchActive = false; lockedHorizontal = false; hideChartOverlays(); }
   function onMouseDown(e) {
     wrap = $('adChartWrap');
     if (!wrap || !currentChartData) return;
-    touchActive = true;
-    updateOverlays(e.clientX);
+    touchActive = true; updateOverlays(e.clientX);
   }
-  function onMouseMove(e) {
-    if (!touchActive || !currentChartData) return;
-    updateOverlays(e.clientX);
-  }
-  function onMouseUp() {
-    if (!touchActive) return;
-    touchActive = false;
-    hideChartOverlays();
-  }
+  function onMouseMove(e) { if (!touchActive || !currentChartData) return; updateOverlays(e.clientX); }
+  function onMouseUp() { if (!touchActive) return; touchActive = false; hideChartOverlays(); }
 
   document.addEventListener('touchstart', onTouchStart, { passive: true });
   document.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -1104,6 +1046,284 @@ window.adActionRemove = function() {
   closeAssetDetail();
   setTimeout(() => window.removePosition(ticker), 100);
 };
+
+/* ============================================================
+   FERRAMENTAS
+   ============================================================ */
+let currentTool = 'perf';
+
+function renderTools() {
+  document.querySelectorAll('.tools-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tool === currentTool);
+  });
+  ['perf','sim','goals','report','ir'].forEach(t => {
+    const el = $('tool' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (el) el.classList.toggle('hidden', t !== currentTool);
+  });
+  if (currentTool === 'perf') renderPerformance();
+  if (currentTool === 'goals') renderGoals();
+  if (currentTool === 'ir') renderIR();
+  if (currentTool === 'report') initReportMonth();
+}
+
+document.querySelectorAll('.tools-tab').forEach(btn => {
+  btn.addEventListener('click', () => { currentTool = btn.dataset.tool; renderTools(); });
+});
+
+function renderPerformance() {
+  const container = $('perfContent');
+  if (!container) return;
+  const ps = positions();
+  if (!ps.length) { container.innerHTML = '<div class="empty">Sem ativos na carteira ainda.</div>'; return; }
+  const sorted = [...ps].sort((a, b) => b.unrealizedPct - a.unrealizedPct);
+  const maxAbs = Math.max(...sorted.map(p => Math.abs(p.unrealizedPct)), 1);
+  container.innerHTML = sorted.map((p, i) => {
+    const isPos = p.unrealizedPct >= 0;
+    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const barWidth = Math.min(100, (Math.abs(p.unrealizedPct) / maxAbs) * 100);
+    return `<div class="perf-item ${isPos ? 'pos' : 'neg'}">
+      <div class="perf-head">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+          <div class="perf-rank ${rankClass}">${i + 1}</div>
+          <div style="min-width:0">
+            <div class="perf-ticker">${esc(displayTicker(p.ticker))}</div>
+            <div class="small" style="margin-top:1px">${esc(p.type)}</div>
+          </div>
+        </div>
+        <div class="perf-pct ${isPos ? 'pos' : 'neg'}">${pct(p.unrealizedPct)}</div>
+      </div>
+      <div class="perf-meta"><span>Custo: ${brl(p.cost)}</span><span>Atual: ${brl(p.market)}</span></div>
+      <div class="perf-bar"><div class="perf-bar-fill ${isPos ? 'pos' : 'neg'}" style="width:${barWidth}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+window.calcSimulation = function() {
+  const initial = parseMoneyBR($('simInitial')?.value);
+  const monthly = parseMoneyBR($('simMonthly')?.value);
+  const months = Number($('simMonths')?.value) || 0;
+  const rateStr = $('simRate')?.value || '0';
+  const monthlyRate = parseNum(rateStr) / 100;
+  if (months <= 0) { alert('Informe um prazo maior que zero.'); return; }
+  if (monthlyRate <= 0) { alert('Informe uma taxa maior que zero.'); return; }
+  if (initial <= 0 && monthly <= 0) { alert('Informe um valor inicial ou aporte mensal.'); return; }
+  let total = initial, invested = initial;
+  for (let i = 0; i < months; i++) { total = total * (1 + monthlyRate) + monthly; invested += monthly; }
+  const profit = total - invested;
+  const box = $('simResult');
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <div style="font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);text-align:center">Resultado em ${months} meses</div>
+    <div class="sim-total" style="color:var(--cyan)">${brl(total)}</div>
+    <div class="sim-row"><span class="lbl">Total investido</span><span class="val">${brl(invested)}</span></div>
+    <div class="sim-row"><span class="lbl">Juros ganhos</span><span class="val" style="color:var(--pink)">${brl(profit)}</span></div>
+    <div class="sim-row"><span class="lbl">Rentabilidade total</span><span class="val">${invested > 0 ? pct((profit / invested) * 100) : '0%'}</span></div>
+    <div class="sim-row"><span class="lbl">Taxa efetiva</span><span class="val">${rateStr}% a.m.</span></div>
+  `;
+};
+
+function renderGoals() {
+  const container = $('goalsList');
+  if (!container) return;
+  const ps = positions();
+  const totalAtual = ps.reduce((s, p) => s + p.market, 0);
+  const goals = Array.isArray(state.goals) ? state.goals : [];
+  if (!goals.length) {
+    container.innerHTML = '<div class="empty">Nenhuma meta cadastrada ainda.<br>Toque em <b>+ Nova meta</b> para criar.</div>';
+    return;
+  }
+  container.innerHTML = goals.map(g => {
+    const pctVal = g.value > 0 ? Math.min(100, (totalAtual / g.value) * 100) : 0;
+    const falta = Math.max(0, g.value - totalAtual);
+    let prazoInfo = '';
+    if (g.date) {
+      const hoje = new Date();
+      const alvo = new Date(g.date + 'T00:00:00');
+      const dias = Math.ceil((alvo - hoje) / 86400000);
+      if (dias > 0) {
+        const meses = Math.ceil(dias / 30);
+        const aporteNecessario = meses > 0 ? falta / meses : 0;
+        prazoInfo = `${meses} meses restantes · aporte ~${brl(aporteNecessario)}/mês`;
+      } else { prazoInfo = 'Prazo vencido'; }
+    }
+    return `<div class="goal-card">
+      <div class="goal-head">
+        <div style="flex:1;min-width:0">
+          <div class="goal-name">${esc(g.name)}</div>
+          ${g.date ? `<div class="goal-date">Alvo: ${esc(g.date.split('-').reverse().join('/'))}</div>` : ''}
+        </div>
+        <button type="button" class="goal-delete" onclick="removeGoal(${g.id})">✕</button>
+      </div>
+      <div class="goal-values">
+        <span><span class="lbl">Atual</span> ${brl(totalAtual)}</span>
+        <span><span class="lbl">Alvo</span> ${brl(g.value)}</span>
+      </div>
+      <div class="goal-bar"><div class="goal-bar-fill" style="width:${pctVal}%"></div></div>
+      <div class="goal-pct">${pctVal.toFixed(1)}% alcançado</div>
+      ${prazoInfo ? `<div class="goal-info">${prazoInfo}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+window.removeGoal = function(id) {
+  if (!confirm('Excluir esta meta?')) return;
+  state.goals = state.goals.filter(g => g.id !== id);
+  save();
+  renderGoals();
+};
+
+function initReportMonth() {
+  const el = $('reportMonth');
+  if (el && !el.value) {
+    const now = new Date();
+    el.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+}
+
+async function generateReportImage() {
+  const monthStr = $('reportMonth')?.value;
+  if (!monthStr) { alert('Escolha um mês.'); return; }
+
+  const [yy, mm] = monthStr.split('-');
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const monthLabel = `${monthNames[Number(mm) - 1]} ${yy}`;
+
+  const ps = positions();
+  const totalAtual = ps.reduce((s, p) => s + p.market, 0);
+  const profitTotal = ps.reduce((s, p) => s + p.unrealized, 0);
+  const profitPct = totalAtual - profitTotal > 0 ? (profitTotal / (totalAtual - profitTotal)) * 100 : 0;
+
+  const divsMes = state.dividends.filter(d => (d.date || '').startsWith(monthStr));
+  const divsTotal = divsMes.reduce((s, d) => s + Number(d.amount || 0), 0);
+
+  const tradesMes = state.trades.filter(t => (t.date || '').startsWith(monthStr) && t.ticker !== SALDO_TICKER);
+  const aportes = tradesMes.filter(t => t.side === 'buy' && !isRFAsset(t.ticker)).reduce((s, t) => s + Math.abs(t.qty * t.price), 0);
+  const retiradas = tradesMes.filter(t => t.side === 'sell' && !isRFAsset(t.ticker)).reduce((s, t) => s + Math.abs(t.qty * t.price), 0);
+
+  const topAtivos = [...ps].sort((a, b) => b.market - a.market).slice(0, 5);
+
+  const W = 1080, H = 1350;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#050508'); bg.addColorStop(1, '#0e0e14');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  const gtop = ctx.createLinearGradient(0, 0, W, 0);
+  gtop.addColorStop(0, '#ec4899'); gtop.addColorStop(0.5, '#a855f7'); gtop.addColorStop(1, '#22d3ee');
+  ctx.fillStyle = gtop; ctx.fillRect(0, 0, W, 8);
+
+  ctx.font = '800 52px system-ui, sans-serif';
+  ctx.fillStyle = gtop;
+  ctx.fillText('enyao', 60, 100);
+
+  ctx.font = '700 26px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.fillText('Relatório mensal', 60, 140);
+
+  ctx.font = '800 46px system-ui, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(monthLabel, 60, 210);
+
+  const hg = ctx.createLinearGradient(60, 250, W - 60, 480);
+  hg.addColorStop(0, '#ec4899'); hg.addColorStop(0.5, '#a855f7'); hg.addColorStop(1, '#22d3ee');
+  ctx.fillStyle = hg;
+  roundRect(ctx, 60, 260, W - 120, 220, 32); ctx.fill();
+
+  ctx.font = '700 20px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  ctx.fillText('PATRIMÔNIO ATUAL', 100, 310);
+
+  ctx.font = '800 68px system-ui, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(brl(totalAtual), 100, 390);
+
+  ctx.font = '700 24px system-ui, sans-serif';
+  const pos = profitTotal >= 0;
+  ctx.fillStyle = pos ? '#d5f7ff' : '#ffd0dd';
+  ctx.fillText(`${pos ? '+' : ''}${brl(profitTotal)}  (${pct(profitPct)})`, 100, 440);
+
+  const yBase = 540;
+  const gapW = (W - 120 - 40) / 3;
+  drawStatCard(ctx, 60, yBase, gapW, 180, 'Proventos do mês', brl(divsTotal), '#22d3ee');
+  drawStatCard(ctx, 60 + gapW + 20, yBase, gapW, 180, 'Aportes no mês', brl(aportes), '#a855f7');
+  drawStatCard(ctx, 60 + (gapW + 20) * 2, yBase, gapW, 180, 'Retiradas', brl(retiradas), '#ec4899');
+
+  ctx.font = '800 22px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.fillText('TOP 5 ATIVOS', 60, yBase + 260);
+
+  const itemY = yBase + 300;
+  const itemH = 80;
+  topAtivos.forEach((p, i) => {
+    const y = itemY + i * (itemH + 12);
+    ctx.fillStyle = 'rgba(255,255,255,.04)';
+    roundRect(ctx, 60, y, W - 120, itemH, 18); ctx.fill();
+
+    const dotColor = COLOR_MAP[p.type] || '#64748b';
+    ctx.fillStyle = dotColor;
+    ctx.beginPath(); ctx.arc(110, y + itemH / 2, 10, 0, Math.PI * 2); ctx.fill();
+
+    ctx.font = '800 26px system-ui, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(displayTicker(p.ticker), 150, y + 36);
+
+    ctx.font = '600 16px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.45)';
+    ctx.fillText(p.type, 150, y + 62);
+
+    ctx.font = '800 26px system-ui, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'right';
+    ctx.fillText(brl(p.market), W - 110, y + 36);
+    ctx.font = '700 18px system-ui, sans-serif';
+    ctx.fillStyle = p.unrealized >= 0 ? '#22d3ee' : '#ff4d80';
+    ctx.fillText(pct(p.unrealizedPct), W - 110, y + 62);
+    ctx.textAlign = 'left';
+  });
+
+  ctx.font = '600 16px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.3)';
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+  ctx.fillText(`Gerado em ${dataHoje} · enyao`, 60, H - 50);
+
+  const dataUrl = canvas.toDataURL('image/png');
+  const preview = $('reportPreview');
+  const img = $('reportImage');
+  const dl = $('reportDownload');
+  img.src = dataUrl;
+  dl.href = dataUrl;
+  preview.classList.remove('hidden');
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawStatCard(ctx, x, y, w, h, label, value, accent) {
+  ctx.fillStyle = 'rgba(255,255,255,.04)';
+  roundRect(ctx, x, y, w, h, 20); ctx.fill();
+  ctx.fillStyle = accent;
+  roundRect(ctx, x, y, w, 6, 3); ctx.fill();
+  ctx.font = '700 16px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.fillText(label, x + 20, y + 48);
+  ctx.font = '800 30px system-ui, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(value, x + 20, y + 110);
+}
 
 /* ---------- Render principal ---------- */
 function render() {
@@ -1163,6 +1383,7 @@ function render() {
   renderDivHistory();
   renderIR();
   updateSaldoDisplay();
+  if (!$('tools')?.classList.contains('hidden')) renderTools();
   if($('autoRefreshSelect')) $('autoRefreshSelect').value = String(state.autoRefresh || 0);
   if($('cdiRateInput')) $('cdiRateInput').value = numToBR(state.cdiRate);
 }
@@ -1223,11 +1444,12 @@ function chooseDiv(a, autoAdd) {
 
 window.showTab = function(id) {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x.dataset.tab === id));
-  ['portfolio','trade','dividends','ir','backup'].forEach(t => { const el = $(t); if (el) el.classList.toggle('hidden', t !== id); });
-  const hideHero = (id === 'ir' || id === 'backup' || id === 'trade');
+  ['portfolio','trade','dividends','tools','backup'].forEach(t => { const el = $(t); if (el) el.classList.toggle('hidden', t !== id); });
+  const hideHero = (id === 'tools' || id === 'backup' || id === 'trade');
   const hs = $('heroSection');
   if (hs) hs.classList.toggle('hidden', hideHero);
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'tools') renderTools();
 };
 
 window.updatePrice = async function(ticker) {
@@ -1361,11 +1583,35 @@ function openMoneyModal(title, defaultValue) {
   });
 }
 
-['tradePrice','tradeRFValue','fees','divAmount','modalInput','cdiRateInput','sellPrice','sellFees','redeemValue'].forEach(id => { const el = $(id); if (el) attachMoneyMask(el); });
+['tradePrice','tradeRFValue','fees','divAmount','modalInput','cdiRateInput','sellPrice','sellFees','redeemValue','simInitial','simMonthly','goalValue'].forEach(id => { const el = $(id); if (el) attachMoneyMask(el); });
 
 $('addSaldoBtn')?.addEventListener('click', () => window.addSaldo());
 $('removeSaldoBtn')?.addEventListener('click', () => window.removeSaldo());
 $('refreshBtn')?.addEventListener('click', refreshQuotes);
+$('simCalcBtn')?.addEventListener('click', () => window.calcSimulation());
+$('genReportBtn')?.addEventListener('click', () => generateReportImage());
+$('addGoalBtn')?.addEventListener('click', () => {
+  const box = $('goalFormBox');
+  box.classList.toggle('hidden');
+  if (!box.classList.contains('hidden')) {
+    $('goalDate').value = '';
+    setTimeout(() => $('goalName')?.focus(), 50);
+  }
+});
+$('saveGoalBtn')?.addEventListener('click', () => {
+  const name = ($('goalName')?.value || '').trim();
+  const value = parseMoneyBR($('goalValue')?.value);
+  const date = $('goalDate')?.value || '';
+  if (!name) { alert('Dê um nome para a meta.'); return; }
+  if (!value || value <= 0) { alert('Informe um valor alvo.'); return; }
+  state.goals.push({ id: Date.now(), name, value, date });
+  save();
+  $('goalName').value = '';
+  $('goalValue').value = '';
+  $('goalDate').value = '';
+  $('goalFormBox').classList.add('hidden');
+  renderGoals();
+});
 $('notaAnalyzeBtn')?.addEventListener('click', () => { analyzeNotaText($('notaInput')?.value || ''); });
 $('notaExampleBtn')?.addEventListener('click', () => {
   if($('notaInput')) $('notaInput').value = `B3 RV LISTADO   V   VISTA   FII MAXI REN CI   @   1   9,07   9,07   C
@@ -1501,6 +1747,7 @@ $('importFile')?.addEventListener('change', async e => {
       if (Array.isArray(d.trades)) state.trades = d.trades;
       if (Array.isArray(d.dividends)) state.dividends = d.dividends;
       if (Array.isArray(d.history)) state.history = d.history;
+      if (Array.isArray(d.goals)) state.goals = d.goals;
       if (d.prices && typeof d.prices === 'object') state.prices = d.prices;
       if (d.lastUpdated) state.lastUpdated = d.lastUpdated;
       if (typeof d.cdiRate === 'number') state.cdiRate = d.cdiRate;
@@ -1521,7 +1768,7 @@ $('diagBtn')?.addEventListener('click', () => {
 
 $('clearBtn')?.addEventListener('click', () => {
   if (confirm('Apagar todos os dados deste aparelho?')) {
-    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {} };
+    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {}, goals: [] };
     save();
   }
 });
