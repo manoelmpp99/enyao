@@ -71,7 +71,7 @@ const NAME_TO_TICKER = {
   'NU ETF':'NDIV11','HASHDEX':'HASH11','QR BITCOIN':'QBTC11','TREND OURO':'GOLD11','TREND CHINA':'XINA11','TREND FIXA':'FIXA11'
 };
 
-const COLOR_MAP = { 'Ação':'#ec4899', 'FII':'#22d3ee', 'ETF':'#a855f7', 'Renda fixa':'#10b981', 'Outro':'#64748b' };
+const COLOR_MAP = { 'Ação':'#ec4899', 'FII':'#22d3ee', 'ETF':'#a855f7', 'BDR':'#f59e0b', 'Renda fixa':'#10b981', 'Outro':'#64748b' };
 const RF_TICKERS = ['CDB','LCI','LCA','CRI','CRA','DEBENTURE','TESOURO SELIC','TESOURO IPCA','TESOURO PREFIXADO'];
 const isRFTicker = t => RF_TICKERS.includes(t);
 
@@ -79,7 +79,7 @@ let state = {
   catalog: [], trades: [], dividends: [], prices: {},
   apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '',
   cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {},
-  goals: []
+  goals: [], b3Catalog: [], b3CatalogSyncedAt: null
 };
 try {
   const raw = localStorage.getItem(KEY);
@@ -97,11 +97,19 @@ try {
     if (Array.isArray(s.history)) state.history = s.history;
     if (s.priceHistory && typeof s.priceHistory === 'object') state.priceHistory = s.priceHistory;
     if (Array.isArray(s.goals)) state.goals = s.goals;
+    if (Array.isArray(s.b3Catalog)) state.b3Catalog = s.b3Catalog;
+    if (s.b3CatalogSyncedAt) state.b3CatalogSyncedAt = s.b3CatalogSyncedAt;
   }
 } catch (e) { console.warn('Erro lendo estado', e); }
 state.apiKey = DEFAULT_API_KEY;
 
-const catalog = () => [...baseCatalog, ...state.catalog];
+function catalog() {
+  const map = new Map();
+  for (const a of baseCatalog) map.set(a.ticker, a);
+  for (const a of state.catalog) map.set(a.ticker, a);
+  for (const a of (state.b3Catalog || [])) if (!map.has(a.ticker)) map.set(a.ticker, a);
+  return Array.from(map.values());
+}
 const brl = n => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const pct = n => { const v = Number(n || 0); return (v >= 0 ? '+' : '') + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'; };
 const today = () => new Date().toLocaleDateString('en-CA');
@@ -787,6 +795,79 @@ async function handlePDFUpload(file) {
 }
 
 /* ============================================================
+   CATÁLOGO B3 (brapi /api/quote/list)
+   ============================================================ */
+function classifyB3Asset(stock, ticker, rawType) {
+  const t = (rawType || '').toLowerCase();
+  if (t === 'stock') return 'Ação';
+  if (t === 'fund') return 'FII';
+  if (t === 'bdr') return 'BDR';
+  if (t === 'unit') return 'Ação';
+  const tk = (ticker || '').toUpperCase();
+  if (tk.endsWith('11')) return 'FII';
+  if (/^[A-Z]{4}3[2-9]$/.test(tk)) return 'BDR';
+  if (/^[A-Z]{4}[3-9]$/.test(tk)) return 'Ação';
+  if (/^[A-Z]{4}11$/.test(tk)) return 'Ação';
+  return 'Outro';
+}
+
+async function syncB3Catalog() {
+  const btn = $('syncB3Btn');
+  const status = $('b3Status');
+  if (!state.apiKey) { alert('Sem chave da brapi configurada.'); return; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Sincronizando…'; }
+  if (status) { status.textContent = 'Consultando B3 via brapi…'; status.className = 'cdi-status'; }
+
+  try {
+    const url = 'https://brapi.dev/api/quote/list?token=' + encodeURIComponent(state.apiKey);
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const list = Array.isArray(j?.stocks) ? j.stocks : (Array.isArray(j?.results) ? j.results : []);
+    if (!list.length) throw new Error('Lista vazia');
+
+    const parsed = [];
+    const seen = new Set();
+    for (const item of list) {
+      const tk = (item.stock || item.ticker || '').toUpperCase().trim();
+      if (!tk || seen.has(tk)) continue;
+      seen.add(tk);
+      const nome = item.name || item.shortName || tk;
+      const type = classifyB3Asset(item.stock, tk, item.type);
+      parsed.push({ ticker: tk, name: nome, type, custom: false, fromB3: true });
+    }
+
+    state.b3Catalog = parsed;
+    state.b3CatalogSyncedAt = new Date().toISOString();
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+
+    if (status) {
+      status.textContent = `✅ ${parsed.length} ativos sincronizados (${timeAgo(state.b3CatalogSyncedAt)})`;
+      status.className = 'cdi-status ok';
+    }
+    alert(`✅ Catálogo B3 atualizado: ${parsed.length} ativos`);
+  } catch (e) {
+    if (status) {
+      status.textContent = '❌ Falha: ' + (e.message || 'erro');
+      status.className = 'cdi-status err';
+    }
+    alert('Não foi possível sincronizar: ' + (e.message || 'erro'));
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '📥 Sincronizar catálogo B3'; }
+    render();
+  }
+}
+
+function clearB3Catalog() {
+  if (!confirm('Limpar o catálogo B3 sincronizado?\n\nVocê continua podendo usar o catálogo básico e cadastrar ativos manualmente.')) return;
+  state.b3Catalog = [];
+  state.b3CatalogSyncedAt = null;
+  save();
+  const status = $('b3Status');
+  if (status) { status.textContent = 'Catálogo B3 limpo'; status.className = 'cdi-status'; }
+}
+
+/* ============================================================
    TELA DE DETALHE
    ============================================================ */
 let currentChartData = null;
@@ -1386,6 +1467,17 @@ function render() {
   if (!$('tools')?.classList.contains('hidden')) renderTools();
   if($('autoRefreshSelect')) $('autoRefreshSelect').value = String(state.autoRefresh || 0);
   if($('cdiRateInput')) $('cdiRateInput').value = numToBR(state.cdiRate);
+  const b3Status = $('b3Status');
+  if (b3Status) {
+    const n = (state.b3Catalog || []).length;
+    if (n > 0) {
+      b3Status.textContent = `${n} ativos sincronizados · ${timeAgo(state.b3CatalogSyncedAt)}`;
+      b3Status.className = 'cdi-status ok';
+    } else {
+      b3Status.textContent = 'Catálogo B3 ainda não sincronizado';
+      b3Status.className = 'cdi-status';
+    }
+  }
 }
 
 function renderTradeHistory() {
@@ -1590,6 +1682,8 @@ $('removeSaldoBtn')?.addEventListener('click', () => window.removeSaldo());
 $('refreshBtn')?.addEventListener('click', refreshQuotes);
 $('simCalcBtn')?.addEventListener('click', () => window.calcSimulation());
 $('genReportBtn')?.addEventListener('click', () => generateReportImage());
+$('syncB3Btn')?.addEventListener('click', () => syncB3Catalog());
+$('clearB3Btn')?.addEventListener('click', () => clearB3Catalog());
 $('addGoalBtn')?.addEventListener('click', () => {
   const box = $('goalFormBox');
   box.classList.toggle('hidden');
@@ -1625,7 +1719,7 @@ $('assetSearch')?.addEventListener('input', e => {
   const exact = catalog().find(a => a.ticker === upper);
   if (exact && /^[a-zA-Z0-9]{2,}$/.test(raw)) toggleRFFields(exact.type === 'Renda fixa' || isRFTicker(exact.ticker));
   else if (!exact) toggleRFFields(false);
-  const matches = catalog().filter(a => (a.ticker + ' ' + a.name).toLowerCase().includes(q)).slice(0, 10);
+  const matches = catalog().filter(a => (a.ticker + ' ' + a.name).toLowerCase().includes(q)).slice(0, 15);
   const box = $('suggestions'); if(!box) return;
   let html = '';
   const exactInMatches = matches.some(a => a.ticker === upper);
@@ -1688,7 +1782,7 @@ if($('divDate')) $('divDate').value = today();
 
 $('divTickerSearch')?.addEventListener('input', e => {
   const raw = e.target.value.trim(); const q = raw.toLowerCase();
-  const matches = catalog().filter(a => (a.ticker + ' ' + a.name).toLowerCase().includes(q)).slice(0, 10);
+  const matches = catalog().filter(a => (a.ticker + ' ' + a.name).toLowerCase().includes(q)).slice(0, 15);
   const box = $('divSuggestions'); if(!box) return;
   let html = '';
   const upper = raw.toUpperCase().replace(/[^A-Z0-9]/g, ''); const exact = matches.some(a => a.ticker === upper);
@@ -1761,14 +1855,14 @@ $('diagBtn')?.addEventListener('click', () => {
   try {
     const raw = localStorage.getItem(KEY) || '(vazio)';
     const parsed = raw !== '(vazio)' ? JSON.parse(raw) : null;
-    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo: ${(parsed.catalog || []).length}\nPreços: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%\nSaldo: ${brl(getSaldoDisponivel())}` : '(sem dados)';
+    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nCatálogo B3: ${(parsed.b3Catalog || []).length}\nPreços: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%\nSaldo: ${brl(getSaldoDisponivel())}` : '(sem dados)';
     alert('📦 Dados no aparelho:\n\n' + summary + '\n\nTamanho: ' + raw.length + ' caracteres');
   } catch (e) { alert('Erro: ' + e.message); }
 });
 
 $('clearBtn')?.addEventListener('click', () => {
   if (confirm('Apagar todos os dados deste aparelho?')) {
-    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {}, goals: [] };
+    state = { catalog: [], trades: [], dividends: [], prices: {}, apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '', cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {}, goals: [], b3Catalog: [], b3CatalogSyncedAt: null };
     save();
   }
 });
