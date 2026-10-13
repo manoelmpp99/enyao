@@ -24,7 +24,6 @@ const baseCatalog = [
   ['CDB','CDB bancário','Renda fixa'],['TESOURO SELIC','Tesouro Selic','Renda fixa'],['TESOURO IPCA','Tesouro IPCA+','Renda fixa'],['TESOURO PREFIXADO','Tesouro Prefixado','Renda fixa'],['LCI','Letra de Crédito Imobiliário','Renda fixa'],['LCA','Letra de Crédito do Agronegócio','Renda fixa'],['CRI','Certificado de Recebíveis Imobiliários','Renda fixa'],['CRA','Certificado de Recebíveis do Agronegócio','Renda fixa'],['DEBENTURE','Debênture','Renda fixa']
 ].map(([ticker, name, type]) => ({ ticker, name, type, custom: false }));
 
-
 const NAME_TO_TICKER = {
   // ---------- FIIs ----------
   'MAXI REN': 'MXRF11',
@@ -36,7 +35,6 @@ const NAME_TO_TICKER = {
   'RBR PROP': 'RBRP11',
   'RBR PROPERTIES': 'RBRP11',
   'RBR ALPHA': 'RBRF11',
-  'RBRF': 'RBRF11',
   'RBR LOG': 'RBRS11',
   'TRX REAL': 'TRXF11',
   'HGLG': 'HGLG11',
@@ -79,7 +77,6 @@ const NAME_TO_TICKER = {
   'BBRC': 'BBRC11',
   'BB RENDA': 'BBRC11',
   'SNFF': 'SNFF11',
-  'SNF': 'SNFF11',
   'RECT': 'RECT11',
   'RVBI': 'RVBI11',
   'FEXC': 'FEXC11',
@@ -129,7 +126,6 @@ const NAME_TO_TICKER = {
   'TEPP': 'TEPP11',
   'TGAR': 'TGAR11',
   'TRNO': 'TRNO11',
-  'TRX': 'TRXF11',
   'VCJR': 'VCJR11',
   'VCRR': 'VCRR11',
   'VINO': 'VINO11',
@@ -238,7 +234,6 @@ const NAME_TO_TICKER = {
   'CAIXA SEGURIDADE': 'CXSE3',
   'CAIXA SEG': 'CXSE3',
   'SABESP ON': 'SBSP3',
-  'CEMIG': 'CMIG4',
   'LIGHT': 'LIGT3',
   'USIMINAS': 'USIM5',
   'KLABIN': 'KLBN4',
@@ -801,7 +796,6 @@ function guessTickerFromName(nome) {
   return null;
 }
 
-/* Parser específico Itaú: "B3 RV LISTADO V VISTA FII MAXI REN CI @ 1 9,07 9,07 C" */
 function parseItauNota(text) {
   if (!text) return [];
   const results = [];
@@ -813,9 +807,7 @@ function parseItauNota(text) {
     const alt = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
     if (alt) dataNota = `${alt[3]}-${alt[2]}-${alt[1]}`;
   }
-
   for (const line of lines) {
-    // Padrão principal Itaú: B3 RV LISTADO (C|V) VISTA ...nome... @ qty preço total D/C
     const m = line.match(/B3\s+RV\s+LISTADO\s+([CV])\s+(\S+)\s+(.+?)\s+[@$]?\s+(\d+)\s+([\d.]+,\d+)\s+([\d.]+,\d+)/i);
     if (m) {
       const side = m[1].toUpperCase() === 'C' ? 'buy' : 'sell';
@@ -829,7 +821,7 @@ function parseItauNota(text) {
         if (tk) ticker = tk[1];
       }
       if (!ticker) {
-        ticker = especificacao.replace(/\s+(CI|ER|N2|N1|ON|PN|UNT|UNT N2|UNT N1|CI ER)\s*$/i, '').split(/\s+/).slice(0, 3).join(' ').toUpperCase();
+        ticker = especificacao.replace(/\s+(CI|ER|N2|N1|ON|PN|UNT|CI ER)\s*$/i, '').split(/\s+/).slice(0, 3).join(' ').toUpperCase();
       }
       results.push({ ticker, side, qty, price, date: dataNota, fees: 0 });
     }
@@ -837,7 +829,6 @@ function parseItauNota(text) {
   return results;
 }
 
-/* Parser compacto: "MXRF11 C 10 9,85 D" (também pega o padrão XP/Rico) */
 function parseCompactNota(text) {
   if (!text) return [];
   const results = [];
@@ -864,21 +855,14 @@ function parseNotaText(fullText) {
     const k = r.ticker + '|' + r.side + '|' + r.qty + '|' + r.price + '|' + r.date;
     if (!seen.has(k)) { seen.add(k); results.push(r); }
   };
-
-  // 1) Parser Itaú (nome do fundo, sem ticker)
   parseItauNota(fullText).forEach(push);
-
-  // 2) Parser compacto (ticker direto)
   parseCompactNota(fullText).forEach(push);
-
-  // 3) Parser genérico por linha (CSV, Sinacor)
   let txt = String(fullText).replace(/\r/g, '\n').replace(/[ \t]+/g, ' ');
   const lines = txt.split(/\n+/).map(l => l.trim()).filter(Boolean);
   for (const line of lines) {
     const csv = parseCSVLine(line); if (csv) { push(csv); continue; }
     const rec = parseRowSinacor(line); if (rec) push(rec);
   }
-
   return results;
 }
 
@@ -1101,7 +1085,7 @@ function chooseDiv(a, autoAdd) {
 window.showTab = function(id) {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x.dataset.tab === id));
   ['portfolio','trade','dividends','ir','backup'].forEach(t => { const el = $(t); if (el) el.classList.toggle('hidden', t !== id); });
-  const hideHero = (id === 'ir' || id === 'backup');
+  const hideHero = (id === 'ir' || id === 'backup' || id === 'trade');
   const hs = $('heroSection');
   if (hs) hs.classList.toggle('hidden', hideHero);
   window.scrollTo({ top: 0, behavior: 'smooth' });
