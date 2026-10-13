@@ -96,6 +96,35 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 .div-meta{font-size:11.5px;color:var(--muted);margin-top:3px}
 .div-type{font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;background:rgba(34,211,238,.15);color:var(--cyan);text-transform:uppercase}
 
+/* ---------- Saldo disponível (novo design) ---------- */
+.saldo-card{
+  background:var(--gradient-div);
+  border-radius:22px;padding:22px;position:relative;overflow:hidden;
+  box-shadow:0 24px 48px -24px rgba(34,211,238,.5),0 16px 40px -20px rgba(168,85,247,.35);
+}
+.saldo-card::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 10% 100%,rgba(255,255,255,.2),transparent 55%)}
+.saldo-card-inner{display:flex;align-items:center;gap:16px;position:relative;z-index:1}
+.saldo-icon{
+  width:52px;height:52px;border-radius:16px;flex-shrink:0;
+  background:rgba(0,0,0,.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+}
+.saldo-content{flex:1;min-width:0}
+.saldo-label{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,.78)}
+.saldo-valor{font-size:28px;font-weight:800;letter-spacing:-1px;margin:4px 0 2px;color:#fff}
+.saldo-hint{font-size:11px;color:rgba(255,255,255,.65);font-weight:500}
+.saldo-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;position:relative;z-index:1}
+.saldo-btn{
+  background:rgba(0,0,0,.28);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:#fff;border:1px solid rgba(255,255,255,.2);
+  font-weight:700;font-size:13.5px;padding:13px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.saldo-btn span{font-size:16px;font-weight:900;line-height:1}
+.saldo-btn:active{transform:scale(.97);background:rgba(0,0,0,.4)}
+
 /* ---------- Alocação por classe ---------- */
 .alloc-card{background:linear-gradient(135deg,rgba(236,72,153,.06),rgba(34,211,238,.06));
   border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:12px}
@@ -149,22 +178,14 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
 .ir-badge.due{background:rgba(236,72,153,.18);color:var(--pink)}
 .ir-filter{margin-bottom:14px}
 .ir-filter select{font-weight:700}
-.ir-chart{
-  display:flex;align-items:flex-end;justify-content:space-around;
-  height:130px;padding:14px 6px 0;
-  background:rgba(255,255,255,.02);
-  border:1px solid var(--border);border-radius:14px;
-  margin-bottom:14px;gap:4px;overflow:hidden;
-}
+.ir-chart{display:flex;align-items:flex-end;justify-content:space-around;
+  height:130px;padding:14px 6px 0;background:rgba(255,255,255,.02);
+  border:1px solid var(--border);border-radius:14px;margin-bottom:14px;gap:4px;overflow:hidden}
 .ir-bar-wrap{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
   flex:1;height:100%;min-width:22px}
-.ir-bar{
-  width:100%;max-width:32px;min-height:4px;
+.ir-bar{width:100%;max-width:32px;min-height:4px;
   background:linear-gradient(180deg,#ec4899 0%,#a855f7 100%);
-  border-radius:6px 6px 0 0;
-  box-shadow:0 0 14px rgba(236,72,153,.4);
-  transition:height .35s ease-out;
-}
+  border-radius:6px 6px 0 0;box-shadow:0 0 14px rgba(236,72,153,.4);transition:height .35s ease-out}
 .ir-bar-wrap.zero .ir-bar{background:rgba(255,255,255,.08);box-shadow:none}
 .ir-bar-label{font-size:9px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
 
@@ -229,20 +250,3 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
   font-size:26px !important;font-weight:800 !important;letter-spacing:-.8px;text-align:right;color:var(--text)}
 .modal-input:focus{outline:0;background:transparent !important}
 .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
-
-
-/* ---------- Card de saldo disponível ---------- */
-.saldo-card{
-  background:linear-gradient(135deg,rgba(34,211,238,.12),rgba(168,85,247,.12));
-  border:1px solid rgba(34,211,238,.3);
-  border-radius:18px;padding:20px;text-align:center;
-  box-shadow:0 12px 32px -14px rgba(34,211,238,.35);
-}
-.saldo-label{font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.7)}
-.saldo-valor{font-size:32px;font-weight:800;letter-spacing:-1px;margin:8px 0 14px;color:#fff}
-.saldo-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.saldo-btn{
-  background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.18);
-  font-weight:700;font-size:13px;padding:12px;border-radius:12px;
-}
-.saldo-btn:active{transform:scale(.97)}
