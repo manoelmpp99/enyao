@@ -302,3 +302,102 @@ label{display:block;font-size:11px;font-weight:700;letter-spacing:.6px;text-tran
   transform:translateX(-50%)}
 .ad-tip-price{font-size:13px;font-weight:800;color:#fff;letter-spacing:-.3px}
 .ad-tip-date{font-size:9.5px;color:var(--muted);margin-top:2px;letter-spacing:.3px;text-align:center}
+
+
+/* ---------- Ferramentas ---------- */
+.tools-tabs{
+  display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.tools-tabs::-webkit-scrollbar{display:none}
+.tools-tab{
+  flex-shrink:0;background:var(--surface-2);color:var(--muted);
+  border:1px solid var(--border-strong);border-radius:12px;
+  font-size:12px;font-weight:700;padding:10px 14px;white-space:nowrap;
+}
+.tools-tab.active{
+  background:var(--gradient);color:#fff;border-color:transparent;
+  box-shadow:0 8px 20px -10px rgba(236,72,153,.55);
+}
+.tool-panel{animation:tpIn .2s ease-out}
+@keyframes tpIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ---------- Performance ---------- */
+.perf-item{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:14px;
+  padding:14px;margin-bottom:10px;position:relative;overflow:hidden;
+}
+.perf-item::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+}
+.perf-item.pos::before{background:linear-gradient(180deg,#22d3ee 0%,#a855f7 100%)}
+.perf-item.neg::before{background:linear-gradient(180deg,#ff4d80 0%,#ec4899 100%)}
+.perf-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.perf-rank{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;background:rgba(255,255,255,.06);color:var(--muted);
+}
+.perf-rank.gold{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a1300}
+.perf-rank.silver{background:linear-gradient(135deg,#cbd5e1,#94a3b8);color:#1e293b}
+.perf-rank.bronze{background:linear-gradient(135deg,#d97706,#92400e);color:#fff}
+.perf-ticker{font-weight:800;font-size:15px;letter-spacing:-.3px}
+.perf-pct{font-weight:800;font-size:15px}
+.perf-pct.pos{color:var(--cyan)}
+.perf-pct.neg{color:var(--danger)}
+.perf-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.perf-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.06);margin-top:8px;overflow:hidden}
+.perf-bar-fill{height:100%;border-radius:2px}
+.perf-bar-fill.pos{background:linear-gradient(90deg,#22d3ee,#ec4899)}
+.perf-bar-fill.neg{background:linear-gradient(90deg,#ff4d80,#ec4899)}
+
+/* ---------- Simulador ---------- */
+.sim-result{
+  margin-top:16px;
+  background:linear-gradient(135deg,rgba(236,72,153,.10),rgba(34,211,238,.10));
+  border:1px solid rgba(236,72,153,.25);
+  border-radius:16px;padding:18px;
+}
+.sim-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.sim-row:last-child{border-bottom:0}
+.sim-row .lbl{color:var(--muted)}
+.sim-row .val{font-weight:800}
+.sim-total{
+  font-size:22px;font-weight:800;text-align:center;
+  letter-spacing:-.6px;padding:10px 0;
+}
+
+/* ---------- Metas ---------- */
+.goal-card{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:16px;
+  padding:16px;margin-bottom:12px;position:relative;overflow:hidden;
+}
+.goal-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(236,72,153,.05),rgba(34,211,238,.05));
+  pointer-events:none;
+}
+.goal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;position:relative;z-index:1}
+.goal-name{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.goal-date{font-size:11px;color:var(--muted);margin-top:3px}
+.goal-delete{background:transparent;border:0;color:var(--danger);font-size:16px;padding:4px 6px;opacity:.6}
+.goal-values{display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;position:relative;z-index:1}
+.goal-values .lbl{color:var(--muted)}
+.goal-bar{height:10px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;position:relative;z-index:1}
+.goal-bar-fill{
+  height:100%;background:var(--gradient);border-radius:99px;
+  transition:width .6s ease-out;box-shadow:0 0 12px rgba(236,72,153,.5);
+}
+.goal-pct{
+  font-size:12px;font-weight:800;color:var(--pink);margin-top:6px;text-align:right;
+  position:relative;z-index:1;
+}
+.goal-info{
+  font-size:11px;color:var(--muted);margin-top:6px;position:relative;z-index:1;
+  padding-top:10px;border-top:1px solid var(--border);
+}
+
+/* ---------- Relatório ---------- */
+.report-preview{margin-top:16px;text-align:center}
+.report-preview img{width:100%;border-radius:14px;border:1px solid var(--border-strong);
+  box-shadow:0 16px 40px -16px rgba(0,0,0,.8)}
