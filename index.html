@@ -49,7 +49,17 @@
   </section>
 
   <section class="section hidden" id="trade">
-    <h2>Registrar compra</h2>
+    <div class="saldo-card">
+      <div class="saldo-label">Saldo disponível para investir</div>
+      <div class="saldo-valor" id="saldoDisponivel">R$ 0,00</div>
+      <div class="saldo-actions">
+        <button type="button" class="saldo-btn" id="addSaldoBtn">+ Adicionar saldo</button>
+        <button type="button" class="saldo-btn" id="removeSaldoBtn">− Remover saldo</button>
+      </div>
+      <p class="notice" style="margin-top:10px">Esse é o dinheiro que você tem na corretora aguardando ser investido. Ele não conta no patrimônio até você comprar algo.</p>
+    </div>
+
+    <h2 style="margin-top:22px">Registrar compra</h2>
     <label for="assetSearch">Ativo</label>
     <input id="assetSearch" placeholder="Ticker ou nome…" autocomplete="off">
     <div id="suggestions" class="searchResults hidden"></div>
@@ -75,19 +85,16 @@
       </div>
       <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
       <label for="fees">Custos (opcional)</label><input id="fees" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
-      <button type="submit" class="primary" style="margin-top:18px">Salvar compra</button>
+      <button type="submit" class="primary" style="margin-top:18px">Registrar compra</button>
     </form>
 
     <h2 style="margin-top:28px">Importar nota de corretagem</h2>
-    <p class="notice">Envie o <b>PDF da nota</b> (formatos Sinacor usados por XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion) ou cole o texto. O app reconhece vários padrões automaticamente.</p>
+    <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>. O app reconhece vários padrões automaticamente.</p>
     <label for="notaPdf" style="margin-top:12px">Arquivo PDF</label>
     <input type="file" id="notaPdf" accept=".pdf,application/pdf">
     <div id="pdfStatus" class="import-status"></div>
     <label for="notaInput">Ou cole o texto</label>
-    <textarea id="notaInput" class="import-area" placeholder="Ex.:
-1 C PETR4 PETROBRAS PN N2 100 38,20 3.820,00 D
-MXRF11 C 10 9,85 2025-01-15
-PETR4 Compra 100 38,20"></textarea>
+    <textarea id="notaInput" class="import-area" placeholder="Cole aqui o texto da nota…"></textarea>
     <div class="grid" style="margin-top:10px">
       <button type="button" id="notaAnalyzeBtn" class="ghost">Analisar texto</button>
       <button type="button" id="notaExampleBtn" class="ghost">Ver exemplo</button>
@@ -158,7 +165,7 @@ PETR4 Compra 100 38,20"></textarea>
   </button>
   <button type="button" data-tab="trade" onclick="showTab('trade')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
-    <span>Comprar</span>
+    <span>Operar</span>
   </button>
   <button type="button" data-tab="dividends" onclick="showTab('dividends')">
     <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -222,6 +229,6 @@ PETR4 Compra 100 38,20"></textarea>
   </div>
 </div>
 
-<script src="app.js?v=16"></script>
+<script src="app.js?v=17"></script>
 </body>
 </html>
