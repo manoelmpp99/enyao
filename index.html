@@ -17,23 +17,25 @@
 <body>
 <header>
   <div class="brand">enyao</div>
-  <div class="hero">
-    <div class="hero-label">Patrimônio total</div>
-    <div class="hero-total-row">
-      <div class="hero-total" id="total">R$ 0,00</div>
-      <div class="hero-badge" id="totalPct">0,0%</div>
+  <div id="heroSection">
+    <div class="hero">
+      <div class="hero-label">Patrimônio total</div>
+      <div class="hero-total-row">
+        <div class="hero-total" id="total">R$ 0,00</div>
+        <div class="hero-badge" id="totalPct">0,0%</div>
+      </div>
+      <div class="hero-updated" id="updatedAt"></div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-label">Posições</div><div class="hero-stat-value" id="count">0</div></div>
+        <div class="hero-stat"><div class="hero-stat-label">Resultado</div><div class="hero-stat-value" id="profit">R$ 0,00</div></div>
+      </div>
     </div>
-    <div class="hero-updated" id="updatedAt"></div>
-    <div class="hero-stats">
-      <div class="hero-stat"><div class="hero-stat-label">Posições</div><div class="hero-stat-value" id="count">0</div></div>
-      <div class="hero-stat"><div class="hero-stat-label">Resultado</div><div class="hero-stat-value" id="profit">R$ 0,00</div></div>
-    </div>
-  </div>
-  <div class="div-hero">
-    <div class="div-hero-label">Proventos recebidos</div>
-    <div class="div-hero-stats">
-      <div class="div-stat"><div class="div-stat-label">Este mês</div><div class="div-stat-value" id="divMonth">R$ 0,00</div></div>
-      <div class="div-stat"><div class="div-stat-label">Este ano</div><div class="div-stat-value" id="divYear">R$ 0,00</div></div>
+    <div class="div-hero">
+      <div class="div-hero-label">Proventos recebidos</div>
+      <div class="div-hero-stats">
+        <div class="div-stat"><div class="div-stat-label">Este mês</div><div class="div-stat-value" id="divMonth">R$ 0,00</div></div>
+        <div class="div-stat"><div class="div-stat-label">Este ano</div><div class="div-stat-value" id="divYear">R$ 0,00</div></div>
+      </div>
     </div>
   </div>
 </header>
@@ -77,15 +79,15 @@
     </form>
 
     <h2 style="margin-top:28px">Importar nota de corretagem</h2>
-    <p class="notice">Envie o <b>PDF da nota</b> (padrão Sinacor, usado pela maioria das corretoras) ou cole o texto. O app reconhece automaticamente.</p>
+    <p class="notice">Envie o <b>PDF da nota</b> (formatos Sinacor usados por XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion) ou cole o texto. O app reconhece vários padrões automaticamente.</p>
     <label for="notaPdf" style="margin-top:12px">Arquivo PDF</label>
     <input type="file" id="notaPdf" accept=".pdf,application/pdf">
     <div id="pdfStatus" class="import-status"></div>
     <label for="notaInput">Ou cole o texto</label>
     <textarea id="notaInput" class="import-area" placeholder="Ex.:
+1 C PETR4 PETROBRAS PN N2 100 38,20 3.820,00 D
 MXRF11 C 10 9,85 2025-01-15
-HGLG11 C 5 165,50 2025-01-15
-PETR4 V 100 38,20 2025-01-20"></textarea>
+PETR4 Compra 100 38,20"></textarea>
     <div class="grid" style="margin-top:10px">
       <button type="button" id="notaAnalyzeBtn" class="ghost">Analisar texto</button>
       <button type="button" id="notaExampleBtn" class="ghost">Ver exemplo</button>
@@ -124,7 +126,8 @@ PETR4 V 100 38,20 2025-01-20"></textarea>
 
   <section class="section hidden" id="ir">
     <h2>Imposto de Renda</h2>
-    <p class="notice">Estimativa com base nas vendas registradas. Regras: ações isentas até R$ 20.000/mês de vendas (15% acima); FIIs 20% sempre; ETFs 15%. Não considera prejuízo acumulado nem day trade.</p>
+    <p class="notice">Estimativa com base nas vendas registradas. Ações isentas até R$ 20.000/mês (15% acima); FIIs 20%; ETFs 15%. Não considera prejuízo acumulado nem day trade.</p>
+    <div id="irFilter"></div>
     <div id="irContent"></div>
   </section>
 
@@ -171,7 +174,6 @@ PETR4 V 100 38,20 2025-01-20"></textarea>
   </button>
 </div></nav>
 
-<!-- Modal genérico (preço/saldo) -->
 <div id="modalOverlay" class="modal-overlay hidden">
   <div class="modal-card">
     <div class="modal-title" id="modalTitle">Atualizar</div>
@@ -186,7 +188,6 @@ PETR4 V 100 38,20 2025-01-20"></textarea>
   </div>
 </div>
 
-<!-- Modal de venda -->
 <div id="sellModal" class="modal-overlay hidden">
   <div class="modal-card">
     <div class="modal-title">Vender <span id="sellTickerName" style="color:var(--pink)"></span></div>
@@ -206,7 +207,6 @@ PETR4 V 100 38,20 2025-01-20"></textarea>
   </div>
 </div>
 
-<!-- Modal de resgate RF -->
 <div id="redeemModal" class="modal-overlay hidden">
   <div class="modal-card">
     <div class="modal-title">Resgatar <span id="redeemTickerName" style="color:var(--pink)"></span></div>
