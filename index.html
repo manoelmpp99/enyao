@@ -136,11 +136,67 @@
     <div id="divHistory"></div>
   </section>
 
-  <section class="section hidden" id="ir">
-    <h2>Imposto de Renda</h2>
-    <p class="notice">Estimativa com base nas vendas registradas. Ações isentas até R$ 20.000/mês (15% acima); FIIs 20%; ETFs 15%. Não considera prejuízo acumulado nem day trade.</p>
-    <div id="irFilter"></div>
-    <div id="irContent"></div>
+  <section class="section hidden" id="tools">
+    <h2>Ferramentas</h2>
+
+    <div class="tools-tabs">
+      <button type="button" class="tools-tab active" data-tool="perf">📊 Performance</button>
+      <button type="button" class="tools-tab" data-tool="sim">🧮 Simulador</button>
+      <button type="button" class="tools-tab" data-tool="goals">🎯 Metas</button>
+      <button type="button" class="tools-tab" data-tool="report">📄 Relatório</button>
+      <button type="button" class="tools-tab" data-tool="ir">🧾 IR</button>
+    </div>
+
+    <div class="tool-panel" id="toolPerf">
+      <p class="notice" style="margin-bottom:14px">Seus ativos ordenados por rentabilidade. Cálculo: (valor atual − custo) ÷ custo.</p>
+      <div id="perfContent"></div>
+    </div>
+
+    <div class="tool-panel hidden" id="toolSim">
+      <p class="notice" style="margin-bottom:14px">Simule quanto seu dinheiro pode render com aportes mensais a juros compostos.</p>
+      <label for="simInitial">Valor inicial (R$)</label>
+      <input id="simInitial" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+      <label for="simMonthly">Aporte mensal (R$)</label>
+      <input id="simMonthly" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+      <div class="grid">
+        <div><label for="simMonths">Prazo (meses)</label><input id="simMonths" type="number" min="1" max="600" value="120"></div>
+        <div><label for="simRate">Taxa (% a.m.)</label><input id="simRate" type="text" inputmode="decimal" value="0,80"></div>
+      </div>
+      <button type="button" id="simCalcBtn" class="primary" style="margin-top:14px">Calcular</button>
+      <div id="simResult" class="sim-result hidden"></div>
+    </div>
+
+    <div class="tool-panel hidden" id="toolGoals">
+      <p class="notice" style="margin-bottom:14px">Defina metas de patrimônio e acompanhe o progresso.</p>
+      <button type="button" class="primary-div" id="addGoalBtn" style="margin-bottom:14px">+ Nova meta</button>
+      <div id="goalFormBox" class="hidden" style="margin-bottom:14px">
+        <label for="goalName">Nome da meta</label>
+        <input id="goalName" placeholder="Ex.: Independência financeira">
+        <div class="grid">
+          <div><label for="goalValue">Valor alvo (R$)</label><input id="goalValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
+          <div><label for="goalDate">Data alvo</label><input id="goalDate" type="date"></div>
+        </div>
+        <button type="button" id="saveGoalBtn" class="primary" style="margin-top:12px">Salvar meta</button>
+      </div>
+      <div id="goalsList"></div>
+    </div>
+
+    <div class="tool-panel hidden" id="toolReport">
+      <p class="notice" style="margin-bottom:14px">Gera uma imagem com o resumo do mês (patrimônio, proventos, aportes e top ativos). Salve ou compartilhe.</p>
+      <label for="reportMonth">Mês</label>
+      <input id="reportMonth" type="month">
+      <button type="button" id="genReportBtn" class="primary" style="margin-top:14px">📸 Gerar imagem do relatório</button>
+      <div id="reportPreview" class="report-preview hidden">
+        <img id="reportImage" alt="Relatório mensal">
+        <a id="reportDownload" class="ghost" download="enyao-relatorio.png" style="display:block;margin-top:12px;text-align:center;text-decoration:none;padding:13px;border-radius:14px;background:var(--surface-2);color:var(--text);font-weight:700">💾 Baixar imagem</a>
+      </div>
+    </div>
+
+    <div class="tool-panel hidden" id="toolIR">
+      <p class="notice">Estimativa com base nas vendas registradas. Ações isentas até R$ 20.000/mês (15% acima); FIIs 20%; ETFs 15%. Não considera prejuízo acumulado nem day trade.</p>
+      <div id="irFilter"></div>
+      <div id="irContent"></div>
+    </div>
   </section>
 
   <section class="section hidden" id="backup">
@@ -176,9 +232,9 @@
     <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     <span>Proventos</span>
   </button>
-  <button type="button" data-tab="ir" onclick="showTab('ir')">
-    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-    <span>IR</span>
+  <button type="button" data-tab="tools" onclick="showTab('tools')">
+    <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1 5 5l-9.4 9.4a2.8 2.8 0 0 1-4-4z"/><path d="M15 9l-9 9"/></svg>
+    <span>Ferramentas</span>
   </button>
   <button type="button" data-tab="backup" onclick="showTab('backup')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -287,6 +343,6 @@
   </div>
 </div>
 
-<script src="app.js?v=20"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>
