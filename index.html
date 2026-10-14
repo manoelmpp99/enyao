@@ -43,7 +43,7 @@
       <label for="loginPassword">Senha</label>
       <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Sua senha">
       <div id="loginError" class="auth-error hidden"></div>
-      <button type="button" class="auth-cta" id="btnLogin">Entrar</button>
+      <button type="button" class="auth-cta" id="btnLogin" onclick="doLogin()">Entrar</button>
       <button type="button" class="auth-link" onclick="authScreen('signup')">Não tem conta? Criar agora</button>
     </div>
   </div>
@@ -62,7 +62,7 @@
       <label for="signupPassword2">Confirmar senha</label>
       <input id="signupPassword2" type="password" autocomplete="new-password" placeholder="Repita a senha">
       <div id="signupError" class="auth-error hidden"></div>
-      <button type="button" class="auth-cta" id="btnSignup">Criar conta</button>
+      <button type="button" class="auth-cta" id="btnSignup" onclick="doSignup()">Criar conta</button>
       <button type="button" class="auth-link" onclick="authScreen('login')">Já tem conta? Entrar</button>
     </div>
   </div>
