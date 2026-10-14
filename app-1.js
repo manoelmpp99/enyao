@@ -90,7 +90,8 @@ const DEFAULT_STATE = () => ({
   apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '',
   cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {},
   goals: [], b3Catalog: [], b3CatalogSyncedAt: null,
-  social: { posts: [], following: [], classes: [], publicProfile: true, bio: '', nickname: '' }
+  social: { posts: [], following: [], publicProfile: true, bio: '', nickname: '' },
+  study: { role: 'student', enrolledClassCode: null, lastStudyTab: 'student' }
 });
 
 let state = DEFAULT_STATE();
