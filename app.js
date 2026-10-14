@@ -81,6 +81,7 @@ const NAME_TO_TICKER = {
 };
 
 const COLOR_MAP = { 'Ação':'#ec4899', 'FII':'#22d3ee', 'ETF':'#a855f7', 'BDR':'#f59e0b', 'Renda fixa':'#10b981', 'Outro':'#64748b' };
+const AVATAR_COLORS = ['#ec4899','#22d3ee','#a855f7','#f59e0b','#10b981','#f43f5e','#8b5cf6','#06b6d4'];
 const RF_TICKERS = ['CDB','LCI','LCA','CRI','CRA','DEBENTURE','TESOURO SELIC','TESOURO IPCA','TESOURO PREFIXADO'];
 const isRFTicker = t => RF_TICKERS.includes(t);
 
@@ -88,7 +89,15 @@ const DEFAULT_STATE = () => ({
   catalog: [], trades: [], dividends: [], prices: {},
   apiKey: DEFAULT_API_KEY, lastUpdated: null, autoRefresh: 0, lastSource: '',
   cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {},
-  goals: [], b3Catalog: [], b3CatalogSyncedAt: null
+  goals: [], b3Catalog: [], b3CatalogSyncedAt: null,
+  social: {
+    posts: [],
+    following: [],
+    classes: [],
+    publicProfile: true,
+    bio: '',
+    nickname: ''
+  }
 });
 
 let state = DEFAULT_STATE();
@@ -113,6 +122,14 @@ function loadStateForCurrentUser() {
       if (Array.isArray(s.goals)) state.goals = s.goals;
       if (Array.isArray(s.b3Catalog)) state.b3Catalog = s.b3Catalog;
       if (s.b3CatalogSyncedAt) state.b3CatalogSyncedAt = s.b3CatalogSyncedAt;
+      if (s.social && typeof s.social === 'object') {
+        if (Array.isArray(s.social.posts)) state.social.posts = s.social.posts;
+        if (Array.isArray(s.social.following)) state.social.following = s.social.following;
+        if (Array.isArray(s.social.classes)) state.social.classes = s.social.classes;
+        if (typeof s.social.publicProfile === 'boolean') state.social.publicProfile = s.social.publicProfile;
+        if (typeof s.social.bio === 'string') state.social.bio = s.social.bio;
+        if (typeof s.social.nickname === 'string') state.social.nickname = s.social.nickname;
+      }
     }
   } catch (e) { console.warn('Erro lendo estado', e); }
   state.apiKey = DEFAULT_API_KEY;
@@ -125,12 +142,23 @@ function catalog() {
   for (const a of (state.b3Catalog || [])) if (!map.has(a.ticker)) map.set(a.ticker, a);
   return Array.from(map.values());
 }
+
 const brl = n => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const pct = n => { const v = Number(n || 0); return (v >= 0 ? '+' : '') + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'; };
 const today = () => new Date().toLocaleDateString('en-CA');
 const $ = id => document.getElementById(id);
 function save() { localStorage.setItem(getKey(), JSON.stringify(state)); render(); }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function avatarColor(str) {
+  let h = 0;
+  for (let i = 0; i < (str || '').length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+function initials(name) {
+  const parts = String(name || '?').trim().split(/\s+/).slice(0, 2);
+  return parts.map(p => p.charAt(0).toUpperCase()).join('') || '?';
+}
 
 /* ---------- RF helpers ---------- */
 function isRFComposite(t) { return t && t.indexOf('@') !== -1; }
@@ -158,26 +186,33 @@ function isRFAsset(ticker) {
 }
 
 (function migrateRF() {
-  const map = {};
-  for (const t of state.trades) {
-    if (isRFComposite(t.ticker)) continue;
-    if (t.ticker === SALDO_TICKER) continue;
-    const isRF = isRFTicker(t.ticker) || catalogEntry(t.ticker)?.type === 'Renda fixa';
-    if (!isRF) continue;
-    const newT = buildRFTicker(t.ticker, t.pctCDI || 100);
-    map[t.ticker] = newT;
-    t.ticker = newT;
-    if (!t.pctCDI) t.pctCDI = 100;
-  }
-  const keys = Object.keys(map);
-  if (keys.length) {
-    for (const oldT of keys) {
-      const newT = map[oldT];
-      if (state.prices[oldT] !== undefined) { state.prices[newT] = state.prices[oldT]; delete state.prices[oldT]; }
-      for (const d of state.dividends) if (d.ticker === oldT) d.ticker = newT;
+  try {
+    const raw = localStorage.getItem(getKey());
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (!s || !Array.isArray(s.trades)) return;
+    const map = {};
+    for (const t of s.trades) {
+      if (isRFComposite(t.ticker)) continue;
+      if (t.ticker === SALDO_TICKER) continue;
+      const c = baseCatalog.find(x => x.ticker === t.ticker) || (s.catalog || []).find(x => x.ticker === t.ticker);
+      const isRF = isRFTicker(t.ticker) || c?.type === 'Renda fixa';
+      if (!isRF) continue;
+      const newT = buildRFTicker(t.ticker, t.pctCDI || 100);
+      map[t.ticker] = newT;
+      t.ticker = newT;
+      if (!t.pctCDI) t.pctCDI = 100;
     }
-    try { localStorage.setItem(getKey(), JSON.stringify(state)); } catch (e) {}
-  }
+    const keys = Object.keys(map);
+    if (keys.length) {
+      for (const oldT of keys) {
+        const newT = map[oldT];
+        if (s.prices && s.prices[oldT] !== undefined) { s.prices[newT] = s.prices[oldT]; delete s.prices[oldT]; }
+        if (Array.isArray(s.dividends)) for (const d of s.dividends) if (d.ticker === oldT) d.ticker = newT;
+      }
+      localStorage.setItem(getKey(), JSON.stringify(s));
+    }
+  } catch (e) {}
 })();
 
 /* ---------- Máscara monetária ---------- */
@@ -217,7 +252,7 @@ function parseNum(str) {
 function numToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function qtyToBR(n) { return Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 8 }); }
 
-/* ---------- Saldo ---------- */
+/* ---------- Saldo disponível ---------- */
 function getSaldoDisponivel() {
   const total = state.trades.filter(t => t.ticker === SALDO_TICKER).reduce((sum, t) => sum + (t.side === 'buy' ? t.price : -t.price), 0);
   return Math.max(0, total);
@@ -552,7 +587,7 @@ function renderIR() {
   container.innerHTML = html;
 }
 
-/* ---------- Parser ---------- */
+/* ---------- Parser de notas ---------- */
 function parseRowSinacor(line) {
   if (!line || line.length < 8) return null;
   const tickerM = line.match(/\b([A-Z]{4}\d{1,2})\b/);
@@ -882,6 +917,9 @@ function clearB3Catalog() {
   if (status) { status.textContent = 'Catálogo B3 limpo'; status.className = 'cdi-status'; }
 }
 
+/* ---- FIM DA PARTE 1 ---- */
+/* A PARTE 2 CONTINUA A PARTIR DAQUI. NÃO FECHE O ARQUIVO. */
+
 /* ============================================================
    AUTENTICAÇÃO (local)
    ============================================================ */
@@ -968,14 +1006,13 @@ async function doSignup() {
   if (users[email]) return showAuthError('signupError', 'Esse e-mail já está cadastrado. Faça login.');
 
   const btn = $('btnSignup');
-  btn.disabled = true; btn.textContent = 'Criando…';
+  if (btn) { btn.disabled = true; btn.textContent = 'Criando…'; }
 
   const userId = newUserId();
   users[email] = { userId, name, email, passwordHash: await hashPassword(pwd), createdAt: new Date().toISOString() };
   saveUsers(users);
   persistAuth({ userId, name, email });
 
-  // Migra dados do modo convidado (se existirem e a conta nova estiver vazia)
   try {
     const guestRaw = localStorage.getItem(BASE_KEY);
     if (guestRaw && !localStorage.getItem(getKey())) {
@@ -983,7 +1020,7 @@ async function doSignup() {
     }
   } catch (e) {}
 
-  btn.disabled = false; btn.textContent = 'Criar conta';
+  if (btn) { btn.disabled = false; btn.textContent = 'Criar conta'; }
   loadStateForCurrentUser();
   bootAfterAuth();
 }
@@ -1018,14 +1055,21 @@ window.logoutConfirm = function() {
   showAuthFlow();
 };
 
+window.authScreen = authScreen;
+window.enterAsGuest = enterAsGuest;
+
+/* ============================================================
+   RENDER DA CONTA / PERFIL PÚBLICO / PROFESSOR
+   ============================================================ */
 function renderAccount() {
   const box = $('accountBox');
   if (!box) return;
   if (authUser && authUser.userId) {
     const initial = (authUser.name || '?').trim().charAt(0).toUpperCase();
+    const color = avatarColor(authUser.email || authUser.name);
     box.innerHTML = `
       <div class="account-card">
-        <div class="account-avatar">${esc(initial)}</div>
+        <div class="account-avatar" style="background:${color}">${esc(initial)}</div>
         <div class="account-info">
           <div class="account-name">${esc(authUser.name)}</div>
           <div class="account-email">${esc(authUser.email)}</div>
@@ -1056,19 +1100,91 @@ window.openSignupFromApp = function() {
   authScreen('signup');
 };
 
-function bootAfterAuth() {
-  showApp();
-  renderAccount();
-  try {
-    runRFProjection(false);
-    recordSnapshot();
-    render();
-    setupAutoRefresh();
-  } catch (e) { console.error('Erro no boot pós-auth:', e); }
+function renderPublicProfile() {
+  const box = $('publicProfileBox');
+  if (!box) return;
+  const nickname = state.social.nickname || (authUser?.name || 'Você');
+  const bio = state.social.bio || 'Investidor(a) em construção.';
+  const color = avatarColor(authUser?.email || nickname);
+  const isPublic = state.social.publicProfile;
+
+  box.innerHTML = `
+    <div class="public-profile ${isPublic ? '' : 'hidden-mode'}">
+      <div class="pp-avatar ${isPublic ? '' : 'anon'}" style="${isPublic ? `background:${color}` : ''}">
+        ${isPublic ? esc(initials(nickname)) : '?'}
+      </div>
+      <div class="pp-name">${isPublic ? esc(nickname) : 'Perfil anônimo'}</div>
+      <div class="pp-bio">${isPublic ? esc(bio) : 'Ative o perfil público para aparecer no Ranking e no Descobrir.'}</div>
+      <div class="pp-stats">
+        <div>
+          <div class="pp-stat-l">Seguidores</div>
+          <div class="pp-stat-v">${state.social.following.length > 0 ? 0 : 0}</div>
+        </div>
+        <div>
+          <div class="pp-stat-l">Posts</div>
+          <div class="pp-stat-v">${state.social.posts.filter(p => p.mine).length}</div>
+        </div>
+        <div>
+          <div class="pp-stat-l">Turmas</div>
+          <div class="pp-stat-v">${state.social.classes.length}</div>
+        </div>
+      </div>
+      <div class="pp-toggle">
+        <div class="pp-toggle-text">
+          <b>Perfil público</b><br>
+          <span style="color:var(--muted);font-size:11px">Aparecer no Ranking e ser encontrado por outros investidores.</span>
+        </div>
+        <div class="switch ${isPublic ? 'on' : ''}" onclick="togglePublicProfile()"></div>
+      </div>
+      <button class="ghost" style="width:100%;margin-top:12px" onclick="editProfile()">Editar apelido e bio</button>
+    </div>
+  `;
+}
+
+window.togglePublicProfile = function() {
+  state.social.publicProfile = !state.social.publicProfile;
+  save();
+  renderPublicProfile();
+};
+
+window.editProfile = function() {
+  const nick = prompt('Apelido público:', state.social.nickname || authUser?.name || '');
+  if (nick === null) return;
+  const bio = prompt('Bio curta:', state.social.bio || '');
+  if (bio === null) return;
+  state.social.nickname = nick.trim().slice(0, 30);
+  state.social.bio = bio.trim().slice(0, 120);
+  save();
+  renderPublicProfile();
+};
+
+function renderTeacher() {
+  const box = $('teacherBox');
+  if (!box) return;
+  const hasClass = state.social.classes.some(c => c.role === 'teacher');
+  if (hasClass) {
+    box.innerHTML = `
+      <div class="teacher-card">
+        <div class="teacher-badge">Professor</div>
+        <div class="teacher-title">Você é professor no enyao</div>
+        <div class="teacher-desc">Suas turmas estão em <b>Social → Turmas</b>. Compartilhe os códigos com seus alunos para que entrem.</div>
+        <button type="button" class="teacher-btn" onclick="showTab('social'); setSocialTab('classes')">Abrir minhas turmas</button>
+      </div>
+    `;
+  } else {
+    box.innerHTML = `
+      <div class="teacher-card">
+        <div class="teacher-badge">Educacional</div>
+        <div class="teacher-title">É professor de investimentos?</div>
+        <div class="teacher-desc">Crie turmas, acompanhe carteiras dos alunos, envie tarefas e materiais. Ferramenta pensada para aulas de educação financeira.</div>
+        <button type="button" class="teacher-btn" onclick="showTab('social'); setSocialTab('classes'); createClass()">Criar minha primeira turma</button>
+      </div>
+    `;
+  }
 }
 
 /* ============================================================
-   TELA DE DETALHE
+   TELA DE DETALHE DO ATIVO
    ============================================================ */
 let currentChartData = null;
 
@@ -1299,843 +1415,4 @@ async function loadAssetChart(ticker) {
 window.adActionBuy = function() {
   const ticker = $('assetDetail')?.dataset.ticker;
   if (!ticker) return;
-  closeAssetDetail();
-  window.showTab('trade');
-  const base = isRFComposite(ticker) ? rfBase(ticker) : ticker;
-  const a = catalogEntry(ticker) || { ticker: base, name: base, type: isRFAsset(ticker) ? 'Renda fixa' : 'Outro' };
-  setTimeout(() => {
-    choose(a, false);
-    if (isRFComposite(ticker) && $('tradeRFPct')) $('tradeRFPct').value = String(rfPct(ticker));
-  }, 100);
-};
-window.adActionSell = function() {
-  const ticker = $('assetDetail')?.dataset.ticker;
-  if (!ticker) return;
-  closeAssetDetail();
-  const isRF = isRFAsset(ticker);
-  setTimeout(() => { isRF ? window.openRedeem(ticker) : window.openSell(ticker); }, 100);
-};
-window.adActionProvento = function() {
-  const ticker = $('assetDetail')?.dataset.ticker;
-  if (!ticker) return;
-  closeAssetDetail();
-  setTimeout(() => window.showProvento(ticker), 100);
-};
-window.adActionRemove = function() {
-  const ticker = $('assetDetail')?.dataset.ticker;
-  if (!ticker) return;
-  closeAssetDetail();
-  setTimeout(() => window.removePosition(ticker), 100);
-};
-
-/* ============================================================
-   FERRAMENTAS
-   ============================================================ */
-let currentTool = 'perf';
-
-function renderTools() {
-  document.querySelectorAll('.tools-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.tool === currentTool);
-  });
-  ['perf','sim','goals','report','ir'].forEach(t => {
-    const el = $('tool' + t.charAt(0).toUpperCase() + t.slice(1));
-    if (el) el.classList.toggle('hidden', t !== currentTool);
-  });
-  if (currentTool === 'perf') renderPerformance();
-  if (currentTool === 'goals') renderGoals();
-  if (currentTool === 'ir') renderIR();
-  if (currentTool === 'report') initReportMonth();
-}
-
-document.querySelectorAll('.tools-tab').forEach(btn => {
-  btn.addEventListener('click', () => { currentTool = btn.dataset.tool; renderTools(); });
-});
-
-function renderPerformance() {
-  const container = $('perfContent');
-  if (!container) return;
-  const ps = positions();
-  if (!ps.length) { container.innerHTML = '<div class="empty">Sem ativos na carteira ainda.</div>'; return; }
-  const sorted = [...ps].sort((a, b) => b.unrealizedPct - a.unrealizedPct);
-  const maxAbs = Math.max(...sorted.map(p => Math.abs(p.unrealizedPct)), 1);
-  container.innerHTML = sorted.map((p, i) => {
-    const isPos = p.unrealizedPct >= 0;
-    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-    const barWidth = Math.min(100, (Math.abs(p.unrealizedPct) / maxAbs) * 100);
-    return `<div class="perf-item ${isPos ? 'pos' : 'neg'}">
-      <div class="perf-head">
-        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
-          <div class="perf-rank ${rankClass}">${i + 1}</div>
-          <div style="min-width:0">
-            <div class="perf-ticker">${esc(displayTicker(p.ticker))}</div>
-            <div class="small" style="margin-top:1px">${esc(p.type)}</div>
-          </div>
-        </div>
-        <div class="perf-pct ${isPos ? 'pos' : 'neg'}">${pct(p.unrealizedPct)}</div>
-      </div>
-      <div class="perf-meta"><span>Custo: ${brl(p.cost)}</span><span>Atual: ${brl(p.market)}</span></div>
-      <div class="perf-bar"><div class="perf-bar-fill ${isPos ? 'pos' : 'neg'}" style="width:${barWidth}%"></div></div>
-    </div>`;
-  }).join('');
-}
-
-window.calcSimulation = function() {
-  const initial = parseMoneyBR($('simInitial')?.value);
-  const monthly = parseMoneyBR($('simMonthly')?.value);
-  const months = Number($('simMonths')?.value) || 0;
-  const rateStr = $('simRate')?.value || '0';
-  const monthlyRate = parseNum(rateStr) / 100;
-  if (months <= 0) { alert('Informe um prazo maior que zero.'); return; }
-  if (monthlyRate <= 0) { alert('Informe uma taxa maior que zero.'); return; }
-  if (initial <= 0 && monthly <= 0) { alert('Informe um valor inicial ou aporte mensal.'); return; }
-  let total = initial, invested = initial;
-  for (let i = 0; i < months; i++) { total = total * (1 + monthlyRate) + monthly; invested += monthly; }
-  const profit = total - invested;
-  const box = $('simResult');
-  box.classList.remove('hidden');
-  box.innerHTML = `
-    <div style="font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);text-align:center">Resultado em ${months} meses</div>
-    <div class="sim-total" style="color:var(--cyan)">${brl(total)}</div>
-    <div class="sim-row"><span class="lbl">Total investido</span><span class="val">${brl(invested)}</span></div>
-    <div class="sim-row"><span class="lbl">Juros ganhos</span><span class="val" style="color:var(--pink)">${brl(profit)}</span></div>
-    <div class="sim-row"><span class="lbl">Rentabilidade total</span><span class="val">${invested > 0 ? pct((profit / invested) * 100) : '0%'}</span></div>
-    <div class="sim-row"><span class="lbl">Taxa efetiva</span><span class="val">${rateStr}% a.m.</span></div>
-  `;
-};
-
-function renderGoals() {
-  const container = $('goalsList');
-  if (!container) return;
-  const ps = positions();
-  const totalAtual = ps.reduce((s, p) => s + p.market, 0);
-  const goals = Array.isArray(state.goals) ? state.goals : [];
-  if (!goals.length) {
-    container.innerHTML = '<div class="empty">Nenhuma meta cadastrada ainda.<br>Toque em <b>+ Nova meta</b> para criar.</div>';
-    return;
-  }
-  container.innerHTML = goals.map(g => {
-    const pctVal = g.value > 0 ? Math.min(100, (totalAtual / g.value) * 100) : 0;
-    const falta = Math.max(0, g.value - totalAtual);
-    let prazoInfo = '';
-    if (g.date) {
-      const hoje = new Date();
-      const alvo = new Date(g.date + 'T00:00:00');
-      const dias = Math.ceil((alvo - hoje) / 86400000);
-      if (dias > 0) {
-        const meses = Math.ceil(dias / 30);
-        const aporteNecessario = meses > 0 ? falta / meses : 0;
-        prazoInfo = `${meses} meses restantes · aporte ~${brl(aporteNecessario)}/mês`;
-      } else { prazoInfo = 'Prazo vencido'; }
-    }
-    return `<div class="goal-card">
-      <div class="goal-head">
-        <div style="flex:1;min-width:0">
-          <div class="goal-name">${esc(g.name)}</div>
-          ${g.date ? `<div class="goal-date">Alvo: ${esc(g.date.split('-').reverse().join('/'))}</div>` : ''}
-        </div>
-        <button type="button" class="goal-delete" onclick="removeGoal(${g.id})">✕</button>
-      </div>
-      <div class="goal-values">
-        <span><span class="lbl">Atual</span> ${brl(totalAtual)}</span>
-        <span><span class="lbl">Alvo</span> ${brl(g.value)}</span>
-      </div>
-      <div class="goal-bar"><div class="goal-bar-fill" style="width:${pctVal}%"></div></div>
-      <div class="goal-pct">${pctVal.toFixed(1)}% alcançado</div>
-      ${prazoInfo ? `<div class="goal-info">${prazoInfo}</div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-window.removeGoal = function(id) {
-  if (!confirm('Excluir esta meta?')) return;
-  state.goals = state.goals.filter(g => g.id !== id);
-  save();
-  renderGoals();
-};
-
-function initReportMonth() {
-  const el = $('reportMonth');
-  if (el && !el.value) {
-    const now = new Date();
-    el.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  }
-}
-
-async function generateReportImage() {
-  const monthStr = $('reportMonth')?.value;
-  if (!monthStr) { alert('Escolha um mês.'); return; }
-
-  const [yy, mm] = monthStr.split('-');
-  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const monthLabel = `${monthNames[Number(mm) - 1]} ${yy}`;
-
-  const ps = positions();
-  const totalAtual = ps.reduce((s, p) => s + p.market, 0);
-  const profitTotal = ps.reduce((s, p) => s + p.unrealized, 0);
-  const profitPct = totalAtual - profitTotal > 0 ? (profitTotal / (totalAtual - profitTotal)) * 100 : 0;
-
-  const divsMes = state.dividends.filter(d => (d.date || '').startsWith(monthStr));
-  const divsTotal = divsMes.reduce((s, d) => s + Number(d.amount || 0), 0);
-
-  const tradesMes = state.trades.filter(t => (t.date || '').startsWith(monthStr) && t.ticker !== SALDO_TICKER);
-  const aportes = tradesMes.filter(t => t.side === 'buy' && !isRFAsset(t.ticker)).reduce((s, t) => s + Math.abs(t.qty * t.price), 0);
-  const retiradas = tradesMes.filter(t => t.side === 'sell' && !isRFAsset(t.ticker)).reduce((s, t) => s + Math.abs(t.qty * t.price), 0);
-
-  const topAtivos = [...ps].sort((a, b) => b.market - a.market).slice(0, 5);
-
-  const W = 1080, H = 1350;
-  const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-
-  const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, '#050508'); bg.addColorStop(1, '#0e0e14');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-
-  const gtop = ctx.createLinearGradient(0, 0, W, 0);
-  gtop.addColorStop(0, '#ec4899'); gtop.addColorStop(0.5, '#a855f7'); gtop.addColorStop(1, '#22d3ee');
-  ctx.fillStyle = gtop; ctx.fillRect(0, 0, W, 8);
-
-  ctx.font = '800 52px system-ui, sans-serif';
-  ctx.fillStyle = gtop;
-  ctx.fillText('enyao', 60, 100);
-
-  ctx.font = '700 26px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.55)';
-  ctx.fillText('Relatório mensal', 60, 140);
-
-  ctx.font = '800 46px system-ui, sans-serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(monthLabel, 60, 210);
-
-  const hg = ctx.createLinearGradient(60, 250, W - 60, 480);
-  hg.addColorStop(0, '#ec4899'); hg.addColorStop(0.5, '#a855f7'); hg.addColorStop(1, '#22d3ee');
-  ctx.fillStyle = hg;
-  roundRect(ctx, 60, 260, W - 120, 220, 32); ctx.fill();
-
-  ctx.font = '700 20px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.75)';
-  ctx.fillText('PATRIMÔNIO ATUAL', 100, 310);
-
-  ctx.font = '800 68px system-ui, sans-serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(brl(totalAtual), 100, 390);
-
-  ctx.font = '700 24px system-ui, sans-serif';
-  const pos = profitTotal >= 0;
-  ctx.fillStyle = pos ? '#d5f7ff' : '#ffd0dd';
-  ctx.fillText(`${pos ? '+' : ''}${brl(profitTotal)}  (${pct(profitPct)})`, 100, 440);
-
-  const yBase = 540;
-  const gapW = (W - 120 - 40) / 3;
-  drawStatCard(ctx, 60, yBase, gapW, 180, 'Proventos do mês', brl(divsTotal), '#22d3ee');
-  drawStatCard(ctx, 60 + gapW + 20, yBase, gapW, 180, 'Aportes no mês', brl(aportes), '#a855f7');
-  drawStatCard(ctx, 60 + (gapW + 20) * 2, yBase, gapW, 180, 'Retiradas', brl(retiradas), '#ec4899');
-
-  ctx.font = '800 22px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.55)';
-  ctx.fillText('TOP 5 ATIVOS', 60, yBase + 260);
-
-  const itemY = yBase + 300;
-  const itemH = 80;
-  topAtivos.forEach((p, i) => {
-    const y = itemY + i * (itemH + 12);
-    ctx.fillStyle = 'rgba(255,255,255,.04)';
-    roundRect(ctx, 60, y, W - 120, itemH, 18); ctx.fill();
-
-    const dotColor = COLOR_MAP[p.type] || '#64748b';
-    ctx.fillStyle = dotColor;
-    ctx.beginPath(); ctx.arc(110, y + itemH / 2, 10, 0, Math.PI * 2); ctx.fill();
-
-    ctx.font = '800 26px system-ui, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(displayTicker(p.ticker), 150, y + 36);
-
-    ctx.font = '600 16px system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,.45)';
-    ctx.fillText(p.type, 150, y + 62);
-
-    ctx.font = '800 26px system-ui, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'right';
-    ctx.fillText(brl(p.market), W - 110, y + 36);
-    ctx.font = '700 18px system-ui, sans-serif';
-    ctx.fillStyle = p.unrealized >= 0 ? '#22d3ee' : '#ff4d80';
-    ctx.fillText(pct(p.unrealizedPct), W - 110, y + 62);
-    ctx.textAlign = 'left';
-  });
-
-  ctx.font = '600 16px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.3)';
-  const dataHoje = new Date().toLocaleDateString('pt-BR');
-  ctx.fillText(`Gerado em ${dataHoje} · enyao`, 60, H - 50);
-
-  const dataUrl = canvas.toDataURL('image/png');
-  const preview = $('reportPreview');
-  const img = $('reportImage');
-  const dl = $('reportDownload');
-  img.src = dataUrl;
-  dl.href = dataUrl;
-  preview.classList.remove('hidden');
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-function drawStatCard(ctx, x, y, w, h, label, value, accent) {
-  ctx.fillStyle = 'rgba(255,255,255,.04)';
-  roundRect(ctx, x, y, w, h, 20); ctx.fill();
-  ctx.fillStyle = accent;
-  roundRect(ctx, x, y, w, 6, 3); ctx.fill();
-  ctx.font = '700 16px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.5)';
-  ctx.fillText(label, x + 20, y + 48);
-  ctx.font = '800 30px system-ui, sans-serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(value, x + 20, y + 110);
-}
-
-/* ---------- Render principal ---------- */
-function render() {
-  const ps = positions();
-  const total = ps.reduce((s, p) => s + p.market, 0);
-  const totalCost = ps.reduce((s, p) => s + p.cost, 0);
-  const profit = ps.reduce((s, p) => s + p.unrealized, 0);
-  const totalPct = totalCost > 0 ? (profit / totalCost) * 100 : 0;
-  if($('total')) $('total').textContent = brl(total);
-  const badge = $('totalPct');
-  if(badge){ badge.textContent = pct(totalPct); badge.className = 'hero-badge ' + (totalPct >= 0 ? 'pos' : 'neg'); }
-  if($('count')) $('count').textContent = ps.length;
-  if($('updatedAt')) $('updatedAt').textContent = state.lastUpdated ? ('Cotações ' + timeAgo(state.lastUpdated) + (state.lastSource ? ' · ' + state.lastSource : '')) : '';
-  const pel = $('profit');
-  if(pel){ pel.textContent = (profit > 0 ? '+' : '') + brl(profit); pel.style.color = profit < 0 ? '#ffd0dd' : '#d5f7ff'; }
-  const dt = computeDividendTotals();
-  if($('divMonth')) $('divMonth').textContent = brl(dt.month);
-  if($('divYear')) $('divYear').textContent = brl(dt.year);
-  renderEvolution();
-  renderAllocation(ps);
-
-  const assetsEl = $('assets');
-  if(assetsEl) assetsEl.innerHTML = ps.length ? ps.map(p => {
-    const pos = p.unrealized >= 0;
-    const yocText = p.div12m > 0 ? pct(p.yoc) : '—';
-    const displayName = displayTicker(p.ticker);
-    const cdiTag = p.isRF && rfPct(p.ticker) !== 100 ? `<span class="pill pill-cdi">${rfPct(p.ticker)}% CDI</span>` : '';
-    const safeTicker = esc(p.ticker).replace(/'/g, "\\'");
-    if (p.isRF) {
-      const cdiInfo = `CDI ${rfPct(p.ticker)}% · Taxa ${state.cdiRate.toFixed(2)}% a.a.`;
-      return `<div class="asset clickable" onclick="openAssetDetail('${safeTicker}')">
-        <div class="assetTop"><div><div class="ticker">${esc(displayName)} <span class="pill">${esc(p.type)}</span> ${cdiTag}</div><div class="small">${esc(p.name)}</div></div><div class="right"><strong>${brl(p.market)}</strong><div class="small">Saldo atual</div></div></div>
-        <div class="sub-grid"><div><div class="sub-label">Valor aplicado</div><div class="sub-value">${brl(p.cost)}</div></div><div><div class="sub-label">Rentabilidade</div><div class="sub-value" style="color:${pos ? 'var(--success)' : 'var(--danger)'}">${pct(p.unrealizedPct)}</div></div><div><div class="sub-label">Resultado</div><div class="sub-value" style="color:${pos ? 'var(--success)' : 'var(--danger)'}">${pos ? '+' : ''}${brl(p.unrealized)}</div></div><div><div class="sub-label">Proventos 12m</div><div class="sub-value" style="color:var(--cyan)">${p.div12m > 0 ? brl(p.div12m) : '—'}</div></div></div>
-        <div class="yoc-line"><span>${cdiInfo}</span><b>${yocText}</b></div>
-        <div class="actions" onclick="event.stopPropagation()">
-          <button type="button" class="ghost-sm" onclick="event.stopPropagation();updatePrice('${safeTicker}')">Atualizar saldo</button>
-          <button type="button" class="ghost-sm" onclick="event.stopPropagation();openRedeem('${safeTicker}')">Resgatar</button>
-          <button type="button" class="ghost-sm" onclick="event.stopPropagation();showProvento('${safeTicker}')">Provento</button>
-          <button type="button" class="ghost-sm danger-ghost" onclick="event.stopPropagation();removePosition('${safeTicker}')">Remover</button>
-        </div>
-      </div>`;
-    }
-    return `<div class="asset clickable" onclick="openAssetDetail('${safeTicker}')">
-      <div class="assetTop"><div><div class="ticker">${esc(displayName)} <span class="pill">${esc(p.type)}</span></div><div class="small">${esc(p.name)} · ${qtyToBR(p.qty)} un.</div></div><div class="right"><strong>${brl(p.market)}</strong><div class="small">Atual ${brl(p.current)}</div></div></div>
-      <div class="sub-grid"><div><div class="sub-label">Preço médio</div><div class="sub-value">${brl(p.avg)}</div></div><div><div class="sub-label">Rentabilidade</div><div class="sub-value" style="color:${pos ? 'var(--success)' : 'var(--danger)'}">${pct(p.unrealizedPct)}</div></div><div><div class="sub-label">Resultado</div><div class="sub-value" style="color:${pos ? 'var(--success)' : 'var(--danger)'}">${pos ? '+' : ''}${brl(p.unrealized)}</div></div><div><div class="sub-label">Proventos 12m</div><div class="sub-value" style="color:var(--cyan)">${p.div12m > 0 ? brl(p.div12m) : '—'}</div></div></div>
-      <div class="yoc-line"><span>YOC 12m (sobre preço médio)</span><b>${yocText}</b></div>
-      <div class="actions" onclick="event.stopPropagation()">
-        <button type="button" class="ghost-sm" onclick="event.stopPropagation();updatePrice('${safeTicker}')">Editar preço</button>
-        <button type="button" class="ghost-sm" onclick="event.stopPropagation();openSell('${safeTicker}')">Vender</button>
-        <button type="button" class="ghost-sm" onclick="event.stopPropagation();showProvento('${safeTicker}')">Provento</button>
-        <button type="button" class="ghost-sm danger-ghost" onclick="event.stopPropagation();removePosition('${safeTicker}')">Remover</button>
-      </div>
-    </div>`;
-  }).join('') : '<div class="empty">Nenhuma posição ainda.<br>Toque em <b>Operar</b> para registrar a primeira compra.</div>';
-
-  renderTradeHistory();
-  renderDivHistory();
-  renderIR();
-  updateSaldoDisplay();
-  renderAccount();
-  if (!$('tools')?.classList.contains('hidden')) renderTools();
-  if($('autoRefreshSelect')) $('autoRefreshSelect').value = String(state.autoRefresh || 0);
-  if($('cdiRateInput')) $('cdiRateInput').value = numToBR(state.cdiRate);
-  const b3Status = $('b3Status');
-  if (b3Status) {
-    const n = (state.b3Catalog || []).length;
-    if (n > 0) {
-      b3Status.textContent = `${n} ativos sincronizados · ${timeAgo(state.b3CatalogSyncedAt)}`;
-      b3Status.className = 'cdi-status ok';
-    } else {
-      b3Status.textContent = 'Catálogo B3 ainda não sincronizado';
-      b3Status.className = 'cdi-status';
-    }
-  }
-}
-
-function renderTradeHistory() {
-  const el = $('tradeHistory'); if (!el) return;
-  const history = state.trades.filter(t => t.ticker !== SALDO_TICKER).slice().reverse().slice(0, 20);
-  el.innerHTML = history.length ? history.map(t => {
-    const isRF = isRFAsset(t.ticker);
-    const label = isRF ? (t.side === 'buy' ? 'Aplicação' : 'Resgate') : (t.side === 'buy' ? 'Compra' : 'Venda');
-    const detail = isRF ? `${esc(t.date)} · ${brl(Math.abs(t.qty * t.price))}` : `${esc(t.date)} · ${qtyToBR(t.qty)} un. a ${brl(t.price)}`;
-    return `<div class="asset"><div class="assetTop"><div><strong>${label} · ${esc(displayTicker(t.ticker))}</strong><div class="small">${detail}</div></div><strong>${brl(Math.abs(t.qty * t.price) + (t.fees || 0))}</strong></div></div>`;
-  }).join('') : '<div class="empty">Nenhuma operação registrada.</div>';
-}
-
-function renderDivHistory() {
-  const el = $('divHistory'); if (!el) return;
-  const list = [...state.dividends].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  if (!list.length) { el.innerHTML = '<div class="empty">Nenhum provento registrado ainda.</div>'; return; }
-  const groups = {};
-  for (const d of list) { const k = (d.date || '').slice(0, 7); if (!groups[k]) groups[k] = []; groups[k].push(d); }
-  const mn = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  el.innerHTML = Object.keys(groups).sort().reverse().map(k => {
-    const [y, m] = k.split('-'); const label = `${mn[Number(m) - 1]} ${y}`; const items = groups[k];
-    const total = items.reduce((s, d) => s + Number(d.amount || 0), 0);
-    return `<div class="month-group"><div class="month-label"><span>${label}</span><span class="month-total">${brl(total)}</span></div>${items.map(d => `<div class="div-card"><div class="div-row"><div><strong>${esc(displayTicker(d.ticker))}</strong><span class="div-type" style="margin-left:6px">${esc(d.kind || 'Dividendo')}</span><div class="div-meta">${esc(d.date)}</div></div><div style="text-align:right"><div class="div-amount">${brl(d.amount)}</div><button type="button" class="delete-btn" onclick="deleteDividend(${d.id})">excluir</button></div></div></div>`).join('')}</div>`;
-  }).join('');
-}
-
-function toggleRFFields(isRF) {
-  const rf = $('tradeRegularFields'), rff = $('tradeRFFields');
-  if (rf) rf.classList.toggle('hidden', isRF);
-  if (rff) rff.classList.toggle('hidden', !isRF);
-}
-
-function choose(a, autoAdd) {
-  if (autoAdd) ensureTickerInCatalog(a.ticker);
-  if($('chosenTicker')) $('chosenTicker').value = a.ticker;
-  if($('chosenType')) $('chosenType').value = a.type || 'Outro';
-  if($('assetSearch')) $('assetSearch').value = a.ticker + ' — ' + a.name;
-  if($('selectedTicker')) $('selectedTicker').textContent = a.ticker;
-  if($('selectedName')) $('selectedName').textContent = a.name;
-  if($('selectedType')) $('selectedType').textContent = 'Categoria: ' + a.type;
-  $('selectedBox')?.classList.remove('hidden');
-  $('suggestions')?.classList.add('hidden');
-  toggleRFFields(a.type === 'Renda fixa' || isRFTicker(a.ticker));
-  if (!a.type || a.type !== 'Renda fixa') { if($('tradeRFPct')) $('tradeRFPct').value = '100'; }
-}
-function chooseDiv(a, autoAdd) {
-  if (autoAdd) ensureTickerInCatalog(a.ticker);
-  if($('divChosenTicker')) $('divChosenTicker').value = a.ticker;
-  if($('divTickerSearch')) $('divTickerSearch').value = a.ticker + ' — ' + a.name;
-  if($('divSelectedTicker')) $('divSelectedTicker').textContent = a.ticker;
-  if($('divSelectedName')) $('divSelectedName').textContent = a.name;
-  $('divSelectedBox')?.classList.remove('hidden');
-  $('divSuggestions')?.classList.add('hidden');
-}
-
-window.showTab = function(id) {
-  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x.dataset.tab === id));
-  ['portfolio','trade','dividends','tools','backup'].forEach(t => { const el = $(t); if (el) el.classList.toggle('hidden', t !== id); });
-  const hideHero = (id === 'tools' || id === 'backup' || id === 'trade');
-  const hs = $('heroSection');
-  if (hs) hs.classList.toggle('hidden', hideHero);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (id === 'tools') renderTools();
-};
-
-window.updatePrice = async function(ticker) {
-  const p = positions().find(x => x.ticker === ticker);
-  const isRF = p?.isRF;
-  const label = isRF ? ('Saldo atual de ' + displayTicker(ticker)) : ('Preço atual de ' + displayTicker(ticker));
-  const def = isRF ? numToBR(p?.current || p?.cost || 0) : numToBR(p?.current || 0);
-  const v = await openMoneyModal(label, def);
-  if (v === null) return;
-  const n = parseMoneyBR(v);
-  if (!Number.isFinite(n) || n <= 0) { alert('Informe um valor maior que zero.'); return; }
-  state.prices[ticker] = n;
-  if (isRF) state.rfLastProjection = null;
-  save();
-};
-
-window.showProvento = function(ticker) {
-  window.showTab('dividends');
-  $('divFormBox')?.classList.remove('hidden');
-  const base = isRFComposite(ticker) ? rfBase(ticker) : ticker;
-  const a = catalogEntry(ticker) || { ticker: base, name: base, type: 'Outro' };
-  chooseDiv(a, false);
-};
-window.deleteDividend = function(id) {
-  if (!confirm('Excluir este provento?')) return;
-  state.dividends = state.dividends.filter(d => d.id !== id);
-  save();
-};
-window.removePosition = function(ticker) {
-  const nome = displayTicker(ticker);
-  if (!confirm(`Remover "${nome}" completamente?\n\nIsso apaga TODAS as operações, proventos e preços deste ativo. Não tem como desfazer.`)) return;
-  state.trades = state.trades.filter(t => t.ticker !== ticker);
-  state.dividends = state.dividends.filter(d => d.ticker !== ticker);
-  delete state.prices[ticker];
-  if (state.priceHistory) delete state.priceHistory[ticker];
-  save();
-  alert('Investimento removido.');
-};
-
-window.openSell = function(ticker) {
-  const p = positions().find(x => x.ticker === ticker);
-  if (!p) { alert('Posição não encontrada.'); return; }
-  const modal = $('sellModal');
-  if (!modal) return;
-  modal.dataset.ticker = ticker;
-  if($('sellTickerName')) $('sellTickerName').textContent = displayTicker(ticker);
-  if($('sellInfo')) $('sellInfo').innerHTML = `Posição atual: <b>${qtyToBR(p.qty)}</b> un. · Preço médio ${brl(p.avg)}<br>Preço atual de mercado: <b>${brl(p.current)}</b>`;
-  if($('sellQty')) $('sellQty').value = qtyToBR(p.qty);
-  if($('sellPrice')) $('sellPrice').value = numToBR(p.current);
-  if($('sellDate')) $('sellDate').value = today();
-  if($('sellFees')) $('sellFees').value = '0,00';
-  modal.classList.remove('hidden');
-};
-$('sellCancel')?.addEventListener('click', () => $('sellModal')?.classList.add('hidden'));
-$('sellModal')?.addEventListener('click', e => { if (e.target === $('sellModal')) $('sellModal').classList.add('hidden'); });
-$('sellConfirm')?.addEventListener('click', () => {
-  const modal = $('sellModal');
-  const ticker = modal?.dataset.ticker;
-  const qty = parseNum($('sellQty')?.value);
-  const price = parseMoneyBR($('sellPrice')?.value);
-  const fees = parseMoneyBR($('sellFees')?.value);
-  const date = $('sellDate')?.value || today();
-  if (!ticker) { alert('Ticker não identificado.'); return; }
-  if (!qty || qty <= 0) { alert('Informe uma quantidade válida.'); return; }
-  if (!price || price <= 0) { alert('Informe um preço válido.'); return; }
-  const p = positions().find(x => x.ticker === ticker);
-  if (!p) { alert('Posição não encontrada.'); return; }
-  if (qty > p.qty + 1e-6) { alert(`Você tem apenas ${qtyToBR(p.qty)} unidades.`); return; }
-  state.trades.push({ ticker, side: 'sell', qty, price, fees, date });
-  save();
-  $('sellModal')?.classList.add('hidden');
-  alert(`✅ Venda de ${qtyToBR(qty)} ${displayTicker(ticker)} a ${brl(price)} registrada.`);
-});
-
-window.openRedeem = function(ticker) {
-  const p = positions().find(x => x.ticker === ticker);
-  if (!p) { alert('Posição não encontrada.'); return; }
-  const modal = $('redeemModal');
-  if (!modal) return;
-  modal.dataset.ticker = ticker;
-  if($('redeemTickerName')) $('redeemTickerName').textContent = displayTicker(ticker);
-  if($('redeemInfo')) $('redeemInfo').innerHTML = `Valor aplicado: <b>${brl(p.cost)}</b><br>Saldo atual projetado: <b>${brl(p.market)}</b>`;
-  if($('redeemValue')) $('redeemValue').value = numToBR(p.market);
-  if($('redeemDate')) $('redeemDate').value = today();
-  modal.classList.remove('hidden');
-};
-$('redeemCancel')?.addEventListener('click', () => $('redeemModal')?.classList.add('hidden'));
-$('redeemModal')?.addEventListener('click', e => { if (e.target === $('redeemModal')) $('redeemModal').classList.add('hidden'); });
-$('redeemConfirm')?.addEventListener('click', () => {
-  const modal = $('redeemModal');
-  const ticker = modal?.dataset.ticker;
-  const value = parseMoneyBR($('redeemValue')?.value);
-  const date = $('redeemDate')?.value || today();
-  if (!ticker) { alert('Ticker não identificado.'); return; }
-  if (!value || value <= 0) { alert('Informe um valor válido.'); return; }
-  const p = positions().find(x => x.ticker === ticker);
-  if (!p) { alert('Posição não encontrada.'); return; }
-  if (value > p.cost + 1e-6) { alert(`Valor maior que o aplicado (${brl(p.cost)}).`); return; }
-  const pctCDI = rfPct(ticker);
-  state.trades.push({ ticker, side: 'sell', qty: 1, price: value, fees: 0, date, pctCDI });
-  state.rfLastProjection = null;
-  runRFProjection(true);
-  save();
-  $('redeemModal')?.classList.add('hidden');
-  alert(`✅ Resgate de ${brl(value)} registrado.`);
-});
-
-function openMoneyModal(title, defaultValue) {
-  return new Promise(resolve => {
-    const overlay = $('modalOverlay'), input = $('modalInput');
-    if (!overlay || !input) { resolve(null); return; }
-    $('modalTitle').textContent = title;
-    input.value = defaultValue ? digitsToMoney(String(defaultValue).replace(/\D/g, '')) : '';
-    overlay.classList.remove('hidden');
-    setTimeout(() => { input.focus(); const l = input.value.length; input.setSelectionRange(l, l); }, 60);
-    function cleanup() {
-      overlay.classList.add('hidden');
-      $('modalConfirm')?.removeEventListener('click', onConfirm);
-      $('modalCancel')?.removeEventListener('click', onCancel);
-      overlay.removeEventListener('click', onOverlay);
-      input.removeEventListener('keydown', onKey);
-    }
-    function onConfirm() { const v = input.value; cleanup(); resolve(v); }
-    function onCancel() { cleanup(); resolve(null); }
-    function onOverlay(e) { if (e.target === overlay) onCancel(); }
-    function onKey(e) { if (e.key === 'Enter') { e.preventDefault(); onConfirm(); } if (e.key === 'Escape') onCancel(); }
-    $('modalConfirm')?.addEventListener('click', onConfirm);
-    $('modalCancel')?.addEventListener('click', onCancel);
-    overlay.addEventListener('click', onOverlay);
-    input.addEventListener('keydown', onKey);
-  });
-}
-
-['tradePrice','tradeRFValue','fees','divAmount','modalInput','cdiRateInput','sellPrice','sellFees','redeemValue','simInitial','simMonthly','goalValue'].forEach(id => { const el = $(id); if (el) attachMoneyMask(el); });
-
-$('addSaldoBtn')?.addEventListener('click', () => window.addSaldo());
-$('removeSaldoBtn')?.addEventListener('click', () => window.removeSaldo());
-$('refreshBtn')?.addEventListener('click', refreshQuotes);
-$('simCalcBtn')?.addEventListener('click', () => window.calcSimulation());
-$('genReportBtn')?.addEventListener('click', () => generateReportImage());
-$('syncB3Btn')?.addEventListener('click', () => syncB3Catalog());
-$('clearB3Btn')?.addEventListener('click', () => clearB3Catalog());
-$('btnLogin')?.addEventListener('click', () => doLogin());
-$('btnSignup')?.addEventListener('click', () => doSignup());
-$('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doLogin(); } });
-$('signupPassword2')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doSignup(); } });
-window.enterAsGuest = enterAsGuest;
-window.authScreen = authScreen;
-$('addGoalBtn')?.addEventListener('click', () => {
-  const box = $('goalFormBox');
-  box.classList.toggle('hidden');
-  if (!box.classList.contains('hidden')) {
-    $('goalDate').value = '';
-    setTimeout(() => $('goalName')?.focus(), 50);
-  }
-});
-$('saveGoalBtn')?.addEventListener('click', () => {
-  const name = ($('goalName')?.value || '').trim();
-  const value = parseMoneyBR($('goalValue')?.value);
-  const date = $('goalDate')?.value || '';
-  if (!name) { alert('Dê um nome para a meta.'); return; }
-  if (!value || value <= 0) { alert('Informe um valor alvo.'); return; }
-  state.goals.push({ id: Date.now(), name, value, date });
-  save();
-  $('goalName').value = '';
-  $('goalValue').value = '';
-  $('goalDate').value = '';
-  $('goalFormBox').classList.add('hidden');
-  renderGoals();
-});
-$('notaAnalyzeBtn')?.addEventListener('click', () => { analyzeNotaText($('notaInput')?.value || ''); });
-$('notaExampleBtn')?.addEventListener('click', () => {
-  if($('notaInput')) $('notaInput').value = `B3 RV LISTADO   V   VISTA   FII MAXI REN CI   @   1   9,07   9,07   C
-B3 RV LISTADO   V   VISTA   FII RBRR PAX CI ER   @   2   68,42   136,84   C
-B3 RV LISTADO   V   VISTA   FII TRX REAL CI   @   1   72,93   72,93   C`;
-});
-$('notaPdf')?.addEventListener('change', async e => { const f = e.target.files[0]; if (f) await handlePDFUpload(f); });
-
-$('assetSearch')?.addEventListener('input', e => {
-  const raw = e.target.value.trim(); const q = raw.toLowerCase(); const upper = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const exact = catalog().find(a => a.ticker === upper);
-  if (exact && /^[a-zA-Z0-9]{2,}$/.test(raw)) toggleRFFields(exact.type === 'Renda fixa' || isRFTicker(exact.ticker));
-  else if (!exact) toggleRFFields(false);
-  const matches = catalog().filter(a => (a.ticker + ' ' + a.name).toLowerCase().includes(q)).slice(0, 15);
-  const box = $('suggestions'); if(!box) return;
-  let html = '';
-  const exactInMatches = matches.some(a => a.ticker === upper);
-  if (upper && !exactInMatches && upper.length >= 3) { html += `<button type="button" class="suggestion new" data-new="1"><span><strong>+ Usar "${esc(upper)}"</strong><br><small style="color:var(--muted)">Ticker novo — salvo automaticamente</small></span><span class="pill pill-new">Novo</span></button>`; }
-  html += matches.map((a, i) => `<button type="button" class="suggestion" data-index="${i}"><span><strong>${esc(a.ticker)}</strong><br><small style="color:var(--muted)">${esc(a.name)}</small></span><span class="pill">${esc(a.type)}</span></button>`).join('');
-  box.innerHTML = html; box.classList.toggle('hidden', !q && !upper);
-  const nb = box.querySelector('button[data-new]'); if (nb) nb.addEventListener('click', () => choose({ ticker: upper, name: upper, type: isRFTicker(upper) ? 'Renda fixa' : 'Outro' }, true));
-  box.querySelectorAll('button[data-index]').forEach(b => b.addEventListener('click', () => choose(matches[Number(b.dataset.index)], false)));
-  if($('chosenTicker')) $('chosenTicker').value = '';
-  if($('chosenType')) $('chosenType').value = '';
-  $('selectedBox')?.classList.add('hidden');
-});
-
-if($('tradeDate')) $('tradeDate').value = today();
-
-$('tradeForm')?.addEventListener('submit', e => {
-  e.preventDefault();
-  let ticker = ($('chosenTicker')?.value || '').trim();
-  if (!ticker) {
-    const raw = $('assetSearch')?.value.trim() || '';
-    const beforeDash = raw.split('—')[0].trim();
-    const candidate = beforeDash.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (candidate.length >= 3 && candidate.length <= 10) ticker = candidate;
-  }
-  if (!ticker) { alert('Escolha um ativo da lista.'); return; }
-  const entry = catalogEntry(ticker);
-  const isRF = (entry?.type === 'Renda fixa') || isRFTicker(ticker) || isRFComposite(ticker);
-  const fees = parseMoneyBR($('fees')?.value);
-  let qty, price, pctCDI = 100, finalTicker = ticker;
-  if (isRF) {
-    const value = parseMoneyBR($('tradeRFValue')?.value);
-    if (value <= 0) { alert('Informe um valor válido em "Valor aplicado".'); return; }
-    pctCDI = parseNum($('tradeRFPct')?.value) || 100;
-    finalTicker = buildRFTicker(rfBase(ticker), pctCDI);
-    qty = 1; price = value;
-  } else {
-    qty = parseNum($('tradeQty')?.value); price = parseMoneyBR($('tradePrice')?.value);
-    if (qty <= 0 || price <= 0) { alert('Informe quantidade e preço válidos.'); return; }
-  }
-  ensureTickerInCatalog(finalTicker);
-  const trade = { ticker: finalTicker, side: 'buy', qty, price, fees, date: ($('tradeDate')?.value) || today() };
-  if (isRF) trade.pctCDI = pctCDI;
-  state.trades.push(trade);
-  if (isRF) { state.rfLastProjection = null; runRFProjection(true); }
-  else { if (state.prices[finalTicker] === undefined) state.prices[finalTicker] = price; }
-  save();
-  e.target.reset();
-  if($('tradeDate')) $('tradeDate').value = today();
-  if($('assetSearch')) $('assetSearch').value = '';
-  if($('chosenTicker')) $('chosenTicker').value = '';
-  if($('chosenType')) $('chosenType').value = '';
-  if($('tradeRFPct')) $('tradeRFPct').value = '100';
-  $('selectedBox')?.classList.add('hidden');
-  toggleRFFields(false);
-  window.showTab('portfolio');
-});
-
-$('toggleDivForm')?.addEventListener('click', () => { const box = $('divFormBox'); if(!box) return; box.classList.toggle('hidden'); if (!box.classList.contains('hidden') && $('divDate')) $('divDate').value = today(); });
-if($('divDate')) $('divDate').value = today();
-
-$('divTickerSearch')?.addEventListener('input', e => {
-  const raw = e.target.value.trim(); const q = raw.toLowerCase();
-  const matches = catalog().filter(a => (a.ticker + ' ' + a.name).toLowerCase().includes(q)).slice(0, 15);
-  const box = $('divSuggestions'); if(!box) return;
-  let html = '';
-  const upper = raw.toUpperCase().replace(/[^A-Z0-9]/g, ''); const exact = matches.some(a => a.ticker === upper);
-  if (upper && !exact && upper.length >= 3) { html += `<button type="button" class="suggestion new" data-new="1"><span><strong>+ Usar "${esc(upper)}"</strong><br><small style="color:var(--muted)">Ticker novo</small></span><span class="pill pill-new">Novo</span></button>`; }
-  html += matches.map((a, i) => `<button type="button" class="suggestion" data-index="${i}"><span><strong>${esc(a.ticker)}</strong><br><small style="color:var(--muted)">${esc(a.name)}</small></span><span class="pill pill-div">${esc(a.type)}</span></button>`).join('');
-  box.innerHTML = html; box.classList.toggle('hidden', !q && !upper);
-  const nb = box.querySelector('button[data-new]'); if (nb) nb.addEventListener('click', () => chooseDiv({ ticker: upper, name: upper, type: isRFTicker(upper) ? 'Renda fixa' : 'Outro' }, true));
-  box.querySelectorAll('button[data-index]').forEach(b => b.addEventListener('click', () => chooseDiv(matches[Number(b.dataset.index)], false)));
-  if($('divChosenTicker')) $('divChosenTicker').value = '';
-  $('divSelectedBox')?.classList.add('hidden');
-});
-
-$('divForm')?.addEventListener('submit', e => {
-  e.preventDefault();
-  let ticker = $('divChosenTicker')?.value;
-  if (!ticker) { const raw = ($('divTickerSearch')?.value || '').trim().split('—')[0].trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); if (raw && raw.length >= 3) ticker = raw; }
-  const amount = parseMoneyBR($('divAmount')?.value), date = ($('divDate')?.value) || today(), kind = $('divKind')?.value || 'Dividendo';
-  if (!ticker || amount <= 0) { alert('Escolha um ativo e informe um valor válido.'); return; }
-  ensureTickerInCatalog(ticker);
-  state.dividends.push({ id: Date.now() + Math.floor(Math.random() * 1000), ticker, amount, date, kind });
-  save();
-  e.target.reset();
-  if($('divChosenTicker')) $('divChosenTicker').value = '';
-  if($('divTickerSearch')) $('divTickerSearch').value = '';
-  $('divSelectedBox')?.classList.add('hidden');
-  if($('divDate')) $('divDate').value = today();
-  $('divFormBox')?.classList.add('hidden');
-});
-
-$('autoRefreshSelect')?.addEventListener('change', e => { state.autoRefresh = Number(e.target.value); save(); setupAutoRefresh(); });
-$('cdiRateInput')?.addEventListener('change', () => {
-  const v = parseMoneyBR($('cdiRateInput')?.value);
-  if (v > 0) { state.cdiRate = v; state.rfLastProjection = null; runRFProjection(true); save(); }
-});
-
-let autoRefreshTimer = null;
-function setupAutoRefresh() {
-  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
-  const min = Number(state.autoRefresh || 0);
-  if (min > 0) { autoRefreshTimer = setInterval(() => { if (document.visibilityState === 'visible') refreshQuotes().catch(() => {}); }, min * 60 * 1000); }
-}
-
-$('exportBtn')?.addEventListener('click', () => {
-  const exportState = { ...state, apiKey: undefined, priceHistory: undefined };
-  const blob = new Blob([JSON.stringify(exportState, null, 2)], { type: 'application/json' });
-  const u = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = u; a.download = 'enyao-backup.json'; a.click(); URL.revokeObjectURL(u);
-});
-
-$('importFile')?.addEventListener('change', async e => {
-  const f = e.target.files[0]; if (!f) return;
-  try {
-    const d = JSON.parse(await f.text());
-    if (d.trades && Array.isArray(d.trades)) {
-      if (Array.isArray(d.catalog)) state.catalog = d.catalog;
-      if (Array.isArray(d.trades)) state.trades = d.trades;
-      if (Array.isArray(d.dividends)) state.dividends = d.dividends;
-      if (Array.isArray(d.history)) state.history = d.history;
-      if (Array.isArray(d.goals)) state.goals = d.goals;
-      if (d.prices && typeof d.prices === 'object') state.prices = d.prices;
-      if (d.lastUpdated) state.lastUpdated = d.lastUpdated;
-      if (typeof d.cdiRate === 'number') state.cdiRate = d.cdiRate;
-      save(); alert('Backup importado.');
-    } else alert('Formato não reconhecido.');
-  } catch (err) { alert('Não foi possível ler esse arquivo JSON.'); }
-  e.target.value = '';
-});
-
-$('diagBtn')?.addEventListener('click', () => {
-  try {
-    const raw = localStorage.getItem(getKey()) || '(vazio)';
-    const parsed = raw !== '(vazio)' ? JSON.parse(raw) : null;
-    const summary = parsed ? `Operações: ${(parsed.trades || []).length}\nProventos: ${(parsed.dividends || []).length}\nCatálogo pessoal: ${(parsed.catalog || []).length}\nCatálogo B3: ${(parsed.b3Catalog || []).length}\nPreços: ${Object.keys(parsed.prices || {}).length}\nHistórico: ${(parsed.history || []).length} dias\nCDI: ${parsed.cdiRate || '—'}%\nSaldo: ${brl(getSaldoDisponivel())}\n\nConta: ${authUser ? authUser.email : 'Convidado'}` : '(sem dados)';
-    alert('📦 Dados no aparelho:\n\n' + summary + '\n\nTamanho: ' + raw.length + ' caracteres');
-  } catch (e) { alert('Erro: ' + e.message); }
-});
-
-$('clearBtn')?.addEventListener('click', () => {
-  if (confirm('Apagar todos os dados deste aparelho?')) {
-    state = DEFAULT_STATE();
-    state.apiKey = DEFAULT_API_KEY;
-    save();
-  }
-});
-
-async function refreshQuotes() {
-  const btn = $('refreshBtn');
-  const ps = positions();
-  if (!ps.length) { alert('Sem posições para atualizar.'); return; }
-  const tickers = ps.filter(p => !p.isRF).map(p => p.ticker);
-  if (!tickers.length) { alert('Só há renda fixa.'); return; }
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Buscando…'; }
-  let updated = 0, failed = [], sourceUsed = '';
-  for (const tk of tickers) {
-    const r = await fetchPrice(tk);
-    if (r && r.price > 0) { state.prices[tk] = r.price; updated++; sourceUsed = r.source; }
-    else failed.push(tk);
-  }
-  if (updated) { state.lastUpdated = new Date().toISOString(); state.lastSource = sourceUsed; }
-  save();
-  if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Atualizar cotações agora'; }
-  if (updated && !failed.length) alert(`✅ ${updated} atualizada(s) · ${sourceUsed}`);
-  else if (updated) alert(`✅ ${updated} atualizada(s) · ${sourceUsed}\n⚠️ Não encontrei: ${failed.join(', ')}`);
-  else alert(`❌ Nenhuma cotação. Verifique: ${failed.join(', ')}`);
-}
-
-async function fetchPriceFromBrapi(ticker) {
-  if (!state.apiKey) return null;
-  try {
-    const url = 'https://brapi.dev/api/quote/' + encodeURIComponent(ticker) + '?token=' + encodeURIComponent(state.apiKey);
-    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!r.ok) return null;
-    const j = await r.json();
-    const p = j?.results?.[0]?.regularMarketPrice;
-    return (typeof p === 'number' && p > 0) ? p : null;
-  } catch (e) { return null; }
-}
-async function fetchPriceFromYahoo(ticker) {
-  try {
-    const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '.SA?interval=1d&range=1d';
-    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!r.ok) return null;
-    const j = await r.json();
-    const p = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    return (typeof p === 'number' && p > 0) ? p : null;
-  } catch (e) { return null; }
-}
-async function fetchPrice(ticker) {
-  let p = await fetchPriceFromBrapi(ticker); if (p !== null) return { price: p, source: 'brapi' };
-  p = await fetchPriceFromYahoo(ticker); if (p !== null) return { price: p, source: 'Yahoo' };
-  return null;
-}
-
-/* ---------- Start com autenticação ---------- */
-try {
-  authUser = loadAuth();
-  if (authUser && authUser.userId) {
-    loadStateForCurrentUser();
-    bootAfterAuth();
-  } else {
-    document.getElementById('authFlow')?.classList.remove('hidden');
-    document.getElementById('appShell')?.classList.add('hidden');
-    setTimeout(() => authScreen('welcome'), 1200);
-  }
-} catch (e) {
-  console.error('Erro no start:', e);
-}
-
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
+  closeAssetDe
