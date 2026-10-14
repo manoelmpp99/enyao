@@ -16,14 +16,11 @@
 </head>
 <body>
 
-<!-- ============ FLUXO DE AUTENTICAÇÃO ============ -->
 <div id="authFlow" class="auth-flow hidden">
-
   <div id="screenSplash" class="auth-screen">
     <div class="auth-splash-brand">enyao</div>
     <div class="auth-splash-tag">INVISTA. EVOLUA. CONSTRUA.</div>
   </div>
-
   <div id="screenWelcome" class="auth-screen hidden">
     <div class="auth-bg-blob"></div>
     <div class="auth-card">
@@ -35,7 +32,6 @@
       <div class="auth-legal">Seus dados ficam salvos neste aparelho. Você pode criar conta depois.</div>
     </div>
   </div>
-
   <div id="screenLogin" class="auth-screen hidden">
     <div class="auth-bg-blob"></div>
     <div class="auth-card">
@@ -51,7 +47,6 @@
       <button type="button" class="auth-link" onclick="authScreen('signup')">Não tem conta? Criar agora</button>
     </div>
   </div>
-
   <div id="screenSignup" class="auth-screen hidden">
     <div class="auth-bg-blob"></div>
     <div class="auth-card">
@@ -71,10 +66,8 @@
       <button type="button" class="auth-link" onclick="authScreen('login')">Já tem conta? Entrar</button>
     </div>
   </div>
-
 </div>
 
-<!-- ============ APP PRINCIPAL ============ -->
 <div id="appShell" class="app-shell hidden">
   <header>
     <div class="brand">enyao</div>
@@ -125,7 +118,6 @@
           <button type="button" class="saldo-btn" id="removeSaldoBtn"><span>−</span> Remover</button>
         </div>
       </div>
-
       <h2 style="margin-top:24px">Registrar compra</h2>
       <label for="assetSearch">Ativo</label>
       <input id="assetSearch" placeholder="Ticker ou nome…" autocomplete="off">
@@ -154,7 +146,6 @@
         <label for="fees">Custos (opcional)</label><input id="fees" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
         <button type="submit" class="primary" style="margin-top:18px">Registrar compra</button>
       </form>
-
       <h2 style="margin-top:28px">Importar nota de corretagem</h2>
       <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>.</p>
       <label for="notaPdf" style="margin-top:12px">Arquivo PDF</label>
@@ -167,7 +158,6 @@
         <button type="button" id="notaExampleBtn" class="ghost">Ver exemplo</button>
       </div>
       <div id="notaPreview" class="hidden" style="margin-top:12px"></div>
-
       <h2 style="margin-top:24px">Histórico de operações</h2>
       <div id="tradeHistory"></div>
     </section>
@@ -198,6 +188,46 @@
       <div id="divHistory"></div>
     </section>
 
+    <section class="section hidden" id="social">
+      <h2>Social</h2>
+      <div class="tools-tabs">
+        <button type="button" class="tools-tab active" data-social="feed">📰 Feed</button>
+        <button type="button" class="tools-tab" data-social="rank">🏆 Ranking</button>
+        <button type="button" class="tools-tab" data-social="classes">🎓 Turmas</button>
+        <button type="button" class="tools-tab" data-social="discover">🔍 Descobrir</button>
+      </div>
+
+      <div class="tool-panel" id="socialFeed">
+        <p class="notice" style="margin-bottom:14px">Compartilhe ideias e acompanhe o que outros investidores estão pensando. Suas carteiras ficam privadas — só o que você decidir publicar é compartilhado.</p>
+        <button type="button" class="primary-div" onclick="newPost()" style="margin-bottom:16px">✍️ Novo post</button>
+        <div id="feedList"></div>
+      </div>
+
+      <div class="tool-panel hidden" id="socialRank">
+        <p class="notice" style="margin-bottom:14px">Ranking de rentabilidade do mês. Por padrão você aparece anonimamente — ative a participação se quiser concorrer.</p>
+        <div class="rank-filter">
+          <button type="button" class="rank-chip active" data-rank="month">Este mês</button>
+          <button type="button" class="rank-chip" data-rank="year">Este ano</button>
+          <button type="button" class="rank-chip" data-rank="all">Histórico</button>
+        </div>
+        <div id="rankList"></div>
+      </div>
+
+      <div class="tool-panel hidden" id="socialClasses">
+        <p class="notice" style="margin-bottom:14px">Turmas conectam professores e alunos. Professor cria com um código, aluno entra com o código.</p>
+        <div class="class-actions">
+          <button type="button" class="primary" onclick="createClass()">+ Criar turma (professor)</button>
+          <button type="button" class="ghost" onclick="joinClass()">Entrar com código (aluno)</button>
+        </div>
+        <div id="classList"></div>
+      </div>
+
+      <div class="tool-panel hidden" id="socialDiscover">
+        <p class="notice" style="margin-bottom:14px">Investidores com carteiras públicas que você pode seguir e se inspirar.</p>
+        <div id="discoverList"></div>
+      </div>
+    </section>
+
     <section class="section hidden" id="tools">
       <h2>Ferramentas</h2>
       <div class="tools-tabs">
@@ -209,7 +239,7 @@
       </div>
 
       <div class="tool-panel" id="toolPerf">
-        <p class="notice" style="margin-bottom:14px">Seus ativos ordenados por rentabilidade. Cálculo: (valor atual − custo) ÷ custo.</p>
+        <p class="notice" style="margin-bottom:14px">Seus ativos ordenados por rentabilidade.</p>
         <div id="perfContent"></div>
       </div>
 
@@ -243,7 +273,7 @@
       </div>
 
       <div class="tool-panel hidden" id="toolReport">
-        <p class="notice" style="margin-bottom:14px">Gera uma imagem com o resumo do mês (patrimônio, proventos, aportes e top ativos). Salve ou compartilhe.</p>
+        <p class="notice" style="margin-bottom:14px">Gera uma imagem com o resumo do mês.</p>
         <label for="reportMonth">Mês</label>
         <input id="reportMonth" type="month">
         <button type="button" id="genReportBtn" class="primary" style="margin-top:14px">📸 Gerar imagem do relatório</button>
@@ -254,46 +284,52 @@
       </div>
 
       <div class="tool-panel hidden" id="toolIR">
-        <p class="notice">Estimativa com base nas vendas registradas. Ações isentas até R$ 20.000/mês (15% acima); FIIs 20%; ETFs 15%. Não considera prejuízo acumulado nem day trade.</p>
+        <p class="notice">Estimativa com base nas vendas registradas. Ações isentas até R$ 20.000/mês (15% acima); FIIs 20%; ETFs 15%.</p>
         <div id="irFilter"></div>
         <div id="irContent"></div>
       </div>
     </section>
 
     <section class="section hidden" id="backup">
-      <h2>Ajustes</h2>
+      <h2>Perfil</h2>
 
-      <h2 style="margin-top:8px">Sua conta</h2>
+      <h3 class="perfil-h3">Sua conta</h3>
       <div id="accountBox"></div>
 
-      <label style="margin-top:24px">Auto-atualização de cotações (ações/FIIs)</label>
+      <h3 class="perfil-h3">Perfil público</h3>
+      <div id="publicProfileBox"></div>
+
+      <h3 class="perfil-h3">Educacional</h3>
+      <div id="teacherBox"></div>
+
+      <h3 class="perfil-h3">Preferências</h3>
+      <label style="margin-top:0">Auto-atualização de cotações</label>
       <select id="autoRefreshSelect">
         <option value="0">Desativada</option><option value="5">A cada 5 minutos</option>
         <option value="15">A cada 15 minutos</option><option value="30">A cada 30 minutos</option>
       </select>
 
-      <h2 style="margin-top:24px">Taxa CDI</h2>
-      <p class="notice">Usada para projetar o saldo da renda fixa automaticamente todo dia.</p>
-      <label>Taxa CDI atual (% a.a.)</label>
+      <label style="margin-top:16px">Taxa CDI atual (% a.a.)</label>
       <input id="cdiRateInput" class="money-input" type="text" inputmode="numeric" placeholder="13,65">
+      <p class="notice">Usada para projetar o saldo da renda fixa automaticamente todo dia.</p>
 
-      <h2 style="margin-top:28px">Catálogo B3</h2>
-      <p class="notice">Sincroniza <b>todos os ativos da B3</b> (ações, FIIs, ETFs, BDRs, units) em 1 clique. Depois de sincronizar, sua busca encontrará qualquer ticker da bolsa. Gasta só 1 requisição da sua cota.</p>
+      <h3 class="perfil-h3">Catálogo B3</h3>
+      <p class="notice">Sincroniza <b>todos os ativos da B3</b> em 1 clique. Gasta só 1 requisição da sua cota.</p>
       <button id="syncB3Btn" class="primary-div" style="margin-top:12px">📥 Sincronizar catálogo B3</button>
       <div id="b3Status" class="cdi-status"></div>
       <button id="clearB3Btn" class="ghost" style="width:100%;margin-top:10px">Limpar catálogo B3</button>
 
-      <h2 style="margin-top:28px">Backup</h2>
+      <h3 class="perfil-h3">Backup</h3>
       <button id="exportBtn" class="primary">Exportar backup (JSON)</button>
       <label for="importFile" style="margin-top:16px">Importar backup</label>
       <input type="file" id="importFile" accept=".json,application/json">
 
-      <h2 style="margin-top:28px">Diagnóstico</h2>
+      <h3 class="perfil-h3">Diagnóstico</h3>
       <button id="diagBtn" class="ghost" style="width:100%">Ver dados salvos</button>
       <button id="clearBtn" class="danger" style="margin-top:18px">Apagar todos os dados</button>
     </section>
   </main>
-  <nav class="tabs"><div class="tabs-inner">
+  <nav class="tabs tabs-6"><div class="tabs-inner">
     <button type="button" class="active" data-tab="portfolio" onclick="showTab('portfolio')">
       <svg viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7"/></svg>
       <span>Carteira</span>
@@ -306,13 +342,17 @@
       <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       <span>Proventos</span>
     </button>
+    <button type="button" data-tab="social" onclick="showTab('social')">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Social</span>
+    </button>
     <button type="button" data-tab="tools" onclick="showTab('tools')">
       <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1 5 5l-9.4 9.4a2.8 2.8 0 0 1-4-4z"/><path d="M15 9l-9 9"/></svg>
       <span>Ferramentas</span>
     </button>
     <button type="button" data-tab="backup" onclick="showTab('backup')">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>Ajustes</span>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+      <span>Perfil</span>
     </button>
   </div></nav>
 </div>
@@ -365,6 +405,31 @@
   </div>
 </div>
 
+<div id="postModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-title">Novo post</div>
+    <label for="postTicker">Ticker (opcional)</label>
+    <input id="postTicker" placeholder="Ex.: MXRF11">
+    <label for="postText">O que você quer compartilhar?</label>
+    <textarea id="postText" class="import-area" style="min-height:120px" placeholder="Sua análise, dúvida ou ideia…"></textarea>
+    <div class="modal-actions">
+      <button type="button" id="postCancel" class="ghost">Cancelar</button>
+      <button type="button" id="postConfirm" class="primary">Publicar</button>
+    </div>
+  </div>
+</div>
+
+<div id="classModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-title" id="classModalTitle">Criar turma</div>
+    <div id="classModalBody"></div>
+    <div class="modal-actions">
+      <button type="button" id="classCancel" class="ghost">Cancelar</button>
+      <button type="button" id="classConfirm" class="primary">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <div id="assetDetail" class="asset-detail hidden">
   <div class="ad-header">
     <button type="button" class="ad-back" onclick="closeAssetDetail()">←</button>
@@ -413,6 +478,6 @@
   </div>
 </div>
 
-<script src="app.js?v=23"></script>
+<script src="app.js?v=25"></script>
 </body>
 </html>
