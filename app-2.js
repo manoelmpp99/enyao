@@ -42,9 +42,7 @@ async function hashPassword(pwd) {
 }
 
 function newUserId() {
-  try {
-    if (crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,'').slice(0, 16);
-  } catch (e) {}
+  try { if (crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,'').slice(0, 16); } catch (e) {}
   return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
@@ -86,34 +84,27 @@ async function doSignup() {
     const email = ($('signupEmail')?.value || '').trim().toLowerCase();
     const pwd = $('signupPassword')?.value || '';
     const pwd2 = $('signupPassword2')?.value || '';
-
     if (!name) return showAuthError('signupError', 'Informe seu nome.');
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('signupError', 'E-mail inválido.');
     if (pwd.length < 6) return showAuthError('signupError', 'A senha precisa ter pelo menos 6 caracteres.');
     if (pwd !== pwd2) return showAuthError('signupError', 'As senhas não batem.');
-
     const users = loadUsers();
     if (users[email]) return showAuthError('signupError', 'Esse e-mail já está cadastrado. Faça login.');
-
     const btn = $('btnSignup');
     if (btn) { btn.disabled = true; btn.textContent = 'Criando…'; }
-
     const userId = newUserId();
     const passwordHash = await hashPassword(pwd);
-    users[email] = { userId, name, email, passwordHash, createdAt: new Date().toISOString() };
+    const isTeacher = new URLSearchParams(location.search).has('professor');
+    users[email] = { userId, name, email, passwordHash, isTeacher, createdAt: new Date().toISOString() };
     saveUsers(users);
     persistAuth({ userId, name, email });
-
     try {
       const guestRaw = localStorage.getItem(BASE_KEY);
-      if (guestRaw && !localStorage.getItem(getKey())) {
-        localStorage.setItem(getKey(), guestRaw);
-      }
+      if (guestRaw && !localStorage.getItem(getKey())) localStorage.setItem(getKey(), guestRaw);
     } catch (e) {}
-
     if (btn) { btn.disabled = false; btn.textContent = 'Criar conta'; }
-
     loadStateForCurrentUser();
+    if (isTeacher) state.study.role = 'teacher';
     bootAfterAuth();
   } catch (e) {
     console.error('[enyao] Erro no signup:', e);
@@ -130,16 +121,14 @@ async function doLogin() {
     const email = ($('loginEmail')?.value || '').trim().toLowerCase();
     const pwd = $('loginPassword')?.value || '';
     if (!email || !pwd) return showAuthError('loginError', 'Preencha e-mail e senha.');
-
     const users = loadUsers();
     const u = users[email];
     if (!u) return showAuthError('loginError', 'E-mail não cadastrado neste aparelho.');
-
     const h = await hashPassword(pwd);
     if (h !== u.passwordHash) return showAuthError('loginError', 'Senha incorreta.');
-
     persistAuth({ userId: u.userId, name: u.name, email: u.email });
     loadStateForCurrentUser();
+    if (u.isTeacher) state.study.role = 'teacher';
     bootAfterAuth();
   } catch (e) {
     console.error('[enyao] Erro no login:', e);
@@ -153,7 +142,7 @@ function enterAsGuest() {
     loadStateForCurrentUser();
     bootAfterAuth();
   } catch (e) {
-    console.error('[enyao] Erro ao entrar como convidado:', e);
+    console.error('[enyao] Erro guest:', e);
     alert('Erro: ' + e.message);
   }
 }
@@ -166,16 +155,10 @@ window.logoutConfirm = function() {
 
 function bootAfterAuth() {
   if (!showApp()) return;
-
   try { renderAccount(); } catch (e) { console.error('[enyao] renderAccount:', e); }
   try { runRFProjection(false); } catch (e) { console.error('[enyao] runRFProjection:', e); }
   try { recordSnapshot(); } catch (e) { console.error('[enyao] recordSnapshot:', e); }
-  try {
-    render();
-  } catch (e) {
-    console.error('[enyao] render:', e);
-    alert('Erro ao carregar o app: ' + e.message + '\n\nVerifique o console (DevTools) pra mais detalhes.');
-  }
+  try { render(); } catch (e) { console.error('[enyao] render:', e); alert('Erro ao carregar o app: ' + e.message); }
   try { setupAutoRefresh(); } catch (e) { console.error('[enyao] setupAutoRefresh:', e); }
 }
 
@@ -185,7 +168,7 @@ window.doSignup = doSignup;
 window.doLogin = doLogin;
 
 /* ============================================================
-   RENDER CONTA / PERFIL / PROFESSOR
+   RENDER CONTA / PERFIL
    ============================================================ */
 function renderAccount() {
   const box = $('accountBox');
@@ -193,13 +176,16 @@ function renderAccount() {
   if (authUser && authUser.userId) {
     const initial = (authUser.name || '?').trim().charAt(0).toUpperCase();
     const color = avatarColor(authUser.email || authUser.name);
+    const users = loadUsers();
+    const u = users[authUser.email];
+    const tag = u?.isTeacher ? 'Professor' : 'Conta ativa';
     box.innerHTML = `
       <div class="account-card">
         <div class="account-avatar" style="background:${color}">${esc(initial)}</div>
         <div class="account-info">
           <div class="account-name">${esc(authUser.name)}</div>
           <div class="account-email">${esc(authUser.email)}</div>
-          <span class="account-badge user">Conta ativa</span>
+          <span class="account-badge user">${esc(tag)}</span>
         </div>
       </div>
       <button class="ghost" style="width:100%;margin-top:12px" onclick="logoutConfirm()">Sair da conta</button>
@@ -243,7 +229,7 @@ function renderPublicProfile() {
       <div class="pp-stats">
         <div><div class="pp-stat-l">Seguidores</div><div class="pp-stat-v">0</div></div>
         <div><div class="pp-stat-l">Posts</div><div class="pp-stat-v">${state.social.posts.filter(p => p.mine).length}</div></div>
-        <div><div class="pp-stat-l">Turmas</div><div class="pp-stat-v">${state.social.classes.length}</div></div>
+        <div><div class="pp-stat-l">Turmas</div><div class="pp-stat-v">0</div></div>
       </div>
       <div class="pp-toggle">
         <div class="pp-toggle-text">
@@ -273,31 +259,6 @@ window.editProfile = function() {
   save();
   renderPublicProfile();
 };
-
-function renderTeacher() {
-  const box = $('teacherBox');
-  if (!box) return;
-  const hasClass = state.social.classes.some(c => c.role === 'teacher');
-  if (hasClass) {
-    box.innerHTML = `
-      <div class="teacher-card">
-        <div class="teacher-badge">Professor</div>
-        <div class="teacher-title">Você é professor no enyao</div>
-        <div class="teacher-desc">Suas turmas estão em <b>Social → Turmas</b>. Compartilhe os códigos com seus alunos para que entrem.</div>
-        <button type="button" class="teacher-btn" onclick="showTab('social'); setSocialTab('classes')">Abrir minhas turmas</button>
-      </div>
-    `;
-  } else {
-    box.innerHTML = `
-      <div class="teacher-card">
-        <div class="teacher-badge">Educacional</div>
-        <div class="teacher-title">É professor de investimentos?</div>
-        <div class="teacher-desc">Crie turmas, acompanhe carteiras dos alunos, envie tarefas e materiais. Ferramenta pensada para aulas de educação financeira.</div>
-        <button type="button" class="teacher-btn" onclick="showTab('social'); setSocialTab('classes'); createClass()">Criar minha primeira turma</button>
-      </div>
-    `;
-  }
-}
 
 /* ============================================================
    TELA DE DETALHE
@@ -795,5 +756,3 @@ function drawStatCard(ctx, x, y, w, h, label, value, accent) {
   ctx.fillStyle = '#ffffff';
   ctx.fillText(value, x + 20, y + 110);
 }
-
-/* ---- FIM DO app-2.js ---- */
