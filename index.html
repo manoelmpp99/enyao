@@ -25,7 +25,7 @@
     <div class="auth-bg-blob"></div>
     <div class="auth-card">
       <div class="auth-brand">enyao</div>
-      <div class="auth-tagline">Acompanhe, analise e evolua seus investimentos em um só lugar.</div>
+      <div class="auth-tagline" id="welcomeTagline">Acompanhe, analise e evolua seus investimentos em um só lugar.</div>
       <button type="button" class="auth-cta" onclick="authScreen('signup')">Criar conta</button>
       <button type="button" class="auth-cta-ghost" onclick="authScreen('login')">Já tenho conta</button>
       <button type="button" class="auth-guest" onclick="enterAsGuest()">Continuar sem conta</button>
@@ -51,8 +51,8 @@
     <div class="auth-bg-blob"></div>
     <div class="auth-card">
       <button type="button" class="auth-back" onclick="authScreen('welcome')">←</button>
-      <div class="auth-title">Criar conta</div>
-      <div class="auth-subtitle">Comece a organizar sua carteira</div>
+      <div class="auth-title" id="signupTitle">Criar conta</div>
+      <div class="auth-subtitle" id="signupSubtitle">Comece a organizar sua carteira</div>
       <label for="signupName">Nome</label>
       <input id="signupName" type="text" autocomplete="name" placeholder="Como devemos te chamar?">
       <label for="signupEmail">E-mail</label>
@@ -61,6 +61,10 @@
       <input id="signupPassword" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
       <label for="signupPassword2">Confirmar senha</label>
       <input id="signupPassword2" type="password" autocomplete="new-password" placeholder="Repita a senha">
+      <div id="teacherField" class="hidden" style="margin-top:14px;padding:12px;border-radius:12px;background:linear-gradient(135deg,rgba(168,85,247,.14),rgba(34,211,238,.14));border:1px solid rgba(168,85,247,.3)">
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-bottom:6px">Cadastro de Professor</div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,.75);line-height:1.5">Você terá acesso ao painel de turmas, geração de códigos para alunos e envio de materiais.</div>
+      </div>
       <div id="signupError" class="auth-error hidden"></div>
       <button type="button" class="auth-cta" id="btnSignup" onclick="doSignup()">Criar conta</button>
       <button type="button" class="auth-link" onclick="authScreen('login')">Já tem conta? Entrar</button>
@@ -94,6 +98,7 @@
     </div>
   </header>
   <main>
+    <!-- ========== CARTEIRA ========== -->
     <section class="section" id="portfolio">
       <h2>Minha carteira</h2>
       <p class="notice" style="margin-top:0;margin-bottom:12px">Carteira declarada — você registra suas operações e o enyao organiza a análise.</p>
@@ -103,108 +108,130 @@
       <div id="assets"></div>
     </section>
 
+    <!-- ========== OPERAR ========== -->
     <section class="section hidden" id="trade">
-      <div class="saldo-card">
-        <div class="saldo-card-inner">
-          <div class="saldo-icon">💰</div>
-          <div class="saldo-content">
-            <div class="saldo-label">Saldo disponível</div>
-            <div class="saldo-valor" id="saldoDisponivel">R$ 0,00</div>
-            <div class="saldo-hint">Aguardando ser investido</div>
-          </div>
-        </div>
-        <div class="saldo-actions">
-          <button type="button" class="saldo-btn" id="addSaldoBtn"><span>+</span> Adicionar</button>
-          <button type="button" class="saldo-btn" id="removeSaldoBtn"><span>−</span> Remover</button>
-        </div>
-      </div>
-      <h2 style="margin-top:24px">Registrar compra</h2>
-      <label for="assetSearch">Ativo</label>
-      <input id="assetSearch" placeholder="Ticker ou nome…" autocomplete="off">
-      <div id="suggestions" class="searchResults hidden"></div>
-      <div id="selectedBox" class="result-box hidden">
-        <strong id="selectedTicker"></strong>
-        <div class="small" id="selectedName"></div>
-        <div class="small" id="selectedType"></div>
-      </div>
-      <form id="tradeForm">
-        <input type="hidden" id="chosenTicker">
-        <input type="hidden" id="chosenType">
-        <div id="tradeRegularFields">
-          <div class="grid">
-            <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="text" inputmode="decimal" placeholder="10"></div>
-            <div><label for="tradePrice">Preço unitário</label><input id="tradePrice" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
-          </div>
-        </div>
-        <div id="tradeRFFields" class="hidden">
-          <label for="tradeRFValue">Valor aplicado</label>
-          <input id="tradeRFValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
-          <label for="tradeRFPct">Percentual do CDI (%)</label>
-          <input id="tradeRFPct" type="text" inputmode="decimal" value="100" placeholder="100">
-        </div>
-        <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
-        <label for="fees">Custos (opcional)</label><input id="fees" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
-        <button type="submit" class="primary" style="margin-top:18px">Registrar compra</button>
-      </form>
-      <h2 style="margin-top:28px">Importar nota de corretagem</h2>
-      <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>.</p>
-      <label for="notaPdf" style="margin-top:12px">Arquivo PDF</label>
-      <input type="file" id="notaPdf" accept=".pdf,application/pdf">
-      <div id="pdfStatus" class="import-status"></div>
-      <label for="notaInput">Ou cole o texto</label>
-      <textarea id="notaInput" class="import-area" placeholder="Cole aqui o texto da nota…"></textarea>
-      <div class="grid" style="margin-top:10px">
-        <button type="button" id="notaAnalyzeBtn" class="ghost">Analisar texto</button>
-        <button type="button" id="notaExampleBtn" class="ghost">Ver exemplo</button>
-      </div>
-      <div id="notaPreview" class="hidden" style="margin-top:12px"></div>
-      <h2 style="margin-top:24px">Histórico de operações</h2>
-      <div id="tradeHistory"></div>
-    </section>
+      <h2>Operar</h2>
 
-    <section class="section hidden" id="dividends">
-      <h2>Proventos</h2>
-      <button type="button" class="primary-div" id="toggleDivForm">+ Registrar provento</button>
-      <div id="divFormBox" class="hidden" style="margin-top:14px">
-        <label for="divTickerSearch">Ativo</label>
-        <input id="divTickerSearch" placeholder="Ticker…" autocomplete="off">
-        <div id="divSuggestions" class="searchResults hidden"></div>
-        <div id="divSelectedBox" class="result-box hidden">
-          <strong id="divSelectedTicker"></strong>
-          <div class="small" id="divSelectedName"></div>
-        </div>
-        <form id="divForm">
-          <input type="hidden" id="divChosenTicker">
-          <div class="grid">
-            <div><label for="divAmount">Valor</label><input id="divAmount" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
-            <div><label for="divDate">Data</label><input id="divDate" type="date" required></div>
+      <div class="tools-tabs" style="margin-bottom:16px">
+        <button type="button" class="tools-tab active" data-op="buy">💸 Compra / Venda</button>
+        <button type="button" class="tools-tab" data-op="div">💰 Proventos</button>
+        <button type="button" class="tools-tab" data-op="nota">📄 Importar nota</button>
+        <button type="button" class="tools-tab" data-op="hist">📜 Histórico</button>
+      </div>
+
+      <!-- COMPRA/VENDA -->
+      <div class="op-panel" id="opBuy">
+        <div class="saldo-card">
+          <div class="saldo-card-inner">
+            <div class="saldo-icon">💰</div>
+            <div class="saldo-content">
+              <div class="saldo-label">Saldo disponível</div>
+              <div class="saldo-valor" id="saldoDisponivel">R$ 0,00</div>
+              <div class="saldo-hint">Aguardando ser investido</div>
+            </div>
           </div>
-          <label for="divKind">Tipo</label>
-          <select id="divKind"><option>Dividendo</option><option>JCP</option><option>Rendimento</option><option>Outro</option></select>
-          <button type="submit" class="primary-div" style="margin-top:16px">Salvar provento</button>
+          <div class="saldo-actions">
+            <button type="button" class="saldo-btn" id="addSaldoBtn"><span>+</span> Adicionar</button>
+            <button type="button" class="saldo-btn" id="removeSaldoBtn"><span>−</span> Remover</button>
+          </div>
+        </div>
+        <h2 style="margin-top:24px">Registrar compra</h2>
+        <label for="assetSearch">Ativo</label>
+        <input id="assetSearch" placeholder="Ticker ou nome…" autocomplete="off">
+        <div id="suggestions" class="searchResults hidden"></div>
+        <div id="selectedBox" class="result-box hidden">
+          <strong id="selectedTicker"></strong>
+          <div class="small" id="selectedName"></div>
+          <div class="small" id="selectedType"></div>
+        </div>
+        <form id="tradeForm">
+          <input type="hidden" id="chosenTicker">
+          <input type="hidden" id="chosenType">
+          <div id="tradeRegularFields">
+            <div class="grid">
+              <div><label for="tradeQty">Quantidade</label><input id="tradeQty" type="text" inputmode="decimal" placeholder="10"></div>
+              <div><label for="tradePrice">Preço unitário</label><input id="tradePrice" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
+            </div>
+          </div>
+          <div id="tradeRFFields" class="hidden">
+            <label for="tradeRFValue">Valor aplicado</label>
+            <input id="tradeRFValue" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+            <label for="tradeRFPct">Percentual do CDI (%)</label>
+            <input id="tradeRFPct" type="text" inputmode="decimal" value="100" placeholder="100">
+          </div>
+          <label for="tradeDate">Data</label><input id="tradeDate" type="date" required>
+          <label for="fees">Custos (opcional)</label><input id="fees" class="money-input" type="text" inputmode="numeric" placeholder="0,00">
+          <button type="submit" class="primary" style="margin-top:18px">Registrar compra</button>
         </form>
       </div>
-      <h2 style="margin-top:24px">Histórico</h2>
-      <div id="divHistory"></div>
+
+      <!-- PROVENTOS -->
+      <div class="op-panel hidden" id="opDiv">
+        <h2 style="margin-top:0">Registrar provento</h2>
+        <button type="button" class="primary-div" id="toggleDivForm">+ Novo provento</button>
+        <div id="divFormBox" class="hidden" style="margin-top:14px">
+          <label for="divTickerSearch">Ativo</label>
+          <input id="divTickerSearch" placeholder="Ticker…" autocomplete="off">
+          <div id="divSuggestions" class="searchResults hidden"></div>
+          <div id="divSelectedBox" class="result-box hidden">
+            <strong id="divSelectedTicker"></strong>
+            <div class="small" id="divSelectedName"></div>
+          </div>
+          <form id="divForm">
+            <input type="hidden" id="divChosenTicker">
+            <div class="grid">
+              <div><label for="divAmount">Valor</label><input id="divAmount" class="money-input" type="text" inputmode="numeric" placeholder="0,00"></div>
+              <div><label for="divDate">Data</label><input id="divDate" type="date" required></div>
+            </div>
+            <label for="divKind">Tipo</label>
+            <select id="divKind"><option>Dividendo</option><option>JCP</option><option>Rendimento</option><option>Outro</option></select>
+            <button type="submit" class="primary-div" style="margin-top:16px">Salvar provento</button>
+          </form>
+        </div>
+        <h2 style="margin-top:24px">Histórico de proventos</h2>
+        <div id="divHistory"></div>
+      </div>
+
+      <!-- NOTA -->
+      <div class="op-panel hidden" id="opNota">
+        <h2 style="margin-top:0">Importar nota de corretagem</h2>
+        <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>.</p>
+        <label for="notaPdf" style="margin-top:12px">Arquivo PDF</label>
+        <input type="file" id="notaPdf" accept=".pdf,application/pdf">
+        <div id="pdfStatus" class="import-status"></div>
+        <label for="notaInput">Ou cole o texto</label>
+        <textarea id="notaInput" class="import-area" placeholder="Cole aqui o texto da nota…"></textarea>
+        <div class="grid" style="margin-top:10px">
+          <button type="button" id="notaAnalyzeBtn" class="ghost">Analisar texto</button>
+          <button type="button" id="notaExampleBtn" class="ghost">Ver exemplo</button>
+        </div>
+        <div id="notaPreview" class="hidden" style="margin-top:12px"></div>
+      </div>
+
+      <!-- HIST -->
+      <div class="op-panel hidden" id="opHist">
+        <h2 style="margin-top:0">Histórico de operações</h2>
+        <div id="tradeHistory"></div>
+      </div>
     </section>
 
+    <!-- ========== SOCIAL ========== -->
     <section class="section hidden" id="social">
       <h2>Social</h2>
       <div class="tools-tabs">
         <button type="button" class="tools-tab active" data-social="feed">📰 Feed</button>
         <button type="button" class="tools-tab" data-social="rank">🏆 Ranking</button>
-        <button type="button" class="tools-tab" data-social="classes">🎓 Turmas</button>
         <button type="button" class="tools-tab" data-social="discover">🔍 Descobrir</button>
       </div>
 
       <div class="tool-panel" id="socialFeed">
-        <p class="notice" style="margin-bottom:14px">Compartilhe ideias e acompanhe o que outros investidores estão pensando. Suas carteiras ficam privadas — só o que você decidir publicar é compartilhado.</p>
+        <p class="notice" style="margin-bottom:14px">Compartilhe ideias e acompanhe o que outros investidores estão pensando.</p>
         <button type="button" class="primary-div" onclick="newPost()" style="margin-bottom:16px">✍️ Novo post</button>
         <div id="feedList"></div>
       </div>
 
       <div class="tool-panel hidden" id="socialRank">
-        <p class="notice" style="margin-bottom:14px">Ranking de rentabilidade do mês. Por padrão você aparece anonimamente — ative a participação se quiser concorrer.</p>
+        <p class="notice" style="margin-bottom:14px">Ranking de rentabilidade. Você aparece anonimamente — ative o perfil público em Perfil pra concorrer.</p>
         <div class="rank-filter">
           <button type="button" class="rank-chip active" data-rank="month">Este mês</button>
           <button type="button" class="rank-chip" data-rank="year">Este ano</button>
@@ -213,21 +240,46 @@
         <div id="rankList"></div>
       </div>
 
-      <div class="tool-panel hidden" id="socialClasses">
-        <p class="notice" style="margin-bottom:14px">Turmas conectam professores e alunos. Professor cria com um código, aluno entra com o código.</p>
-        <div class="class-actions">
-          <button type="button" class="primary" onclick="createClass()">+ Criar turma (professor)</button>
-          <button type="button" class="ghost" onclick="joinClass()">Entrar com código (aluno)</button>
-        </div>
-        <div id="classList"></div>
-      </div>
-
       <div class="tool-panel hidden" id="socialDiscover">
-        <p class="notice" style="margin-bottom:14px">Investidores com carteiras públicas que você pode seguir e se inspirar.</p>
+        <p class="notice" style="margin-bottom:14px">Investidores com carteiras públicas que você pode seguir.</p>
         <div id="discoverList"></div>
       </div>
     </section>
 
+    <!-- ========== ESTUDOS ========== -->
+    <section class="section hidden" id="study">
+      <h2 id="studyTitle">Estudos</h2>
+
+      <!-- VISÃO DO ALUNO -->
+      <div id="studyStudent">
+        <div id="studentNoClass">
+          <div class="study-hero">
+            <div class="study-hero-icon">🎓</div>
+            <div class="study-hero-title">Acesse o conteúdo do seu professor</div>
+            <div class="study-hero-text">Insira o código que seu professor enviou. Ele dá acesso às aulas, materiais e tarefas exclusivas.</div>
+          </div>
+          <label for="studyCodeInput">Código de acesso</label>
+          <input id="studyCodeInput" placeholder="Ex.: AB12CD" maxlength="8" style="text-transform:uppercase;letter-spacing:3px;font-weight:800;text-align:center;font-size:18px">
+          <button type="button" class="primary" id="redeemCodeBtn" style="margin-top:14px" onclick="redeemStudyCode()">Acessar conteúdo</button>
+          <div id="studyError" class="auth-error hidden" style="margin-top:12px"></div>
+        </div>
+        <div id="studentHasClass" class="hidden"></div>
+      </div>
+
+      <!-- VISÃO DO PROFESSOR -->
+      <div id="studyTeacher" class="hidden">
+        <div class="teacher-hero">
+          <div class="teacher-hero-badge">PROFESSOR</div>
+          <div class="teacher-hero-title">Painel de turmas</div>
+          <div class="teacher-hero-text">Crie turmas, gere códigos com validade e envie materiais.</div>
+        </div>
+        <button type="button" class="primary" id="newClassBtn" style="margin-top:16px" onclick="createClass()">+ Criar nova turma</button>
+        <h3 class="perfil-h3" style="margin-top:24px">Minhas turmas</h3>
+        <div id="classList"></div>
+      </div>
+    </section>
+
+    <!-- ========== FERRAMENTAS ========== -->
     <section class="section hidden" id="tools">
       <h2>Ferramentas</h2>
       <div class="tools-tabs">
@@ -290,6 +342,7 @@
       </div>
     </section>
 
+    <!-- ========== PERFIL ========== -->
     <section class="section hidden" id="backup">
       <h2>Perfil</h2>
 
@@ -298,9 +351,6 @@
 
       <h3 class="perfil-h3">Perfil público</h3>
       <div id="publicProfileBox"></div>
-
-      <h3 class="perfil-h3">Educacional</h3>
-      <div id="teacherBox"></div>
 
       <h3 class="perfil-h3">Preferências</h3>
       <label style="margin-top:0">Auto-atualização de cotações</label>
@@ -338,13 +388,13 @@
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
       <span>Operar</span>
     </button>
-    <button type="button" data-tab="dividends" onclick="showTab('dividends')">
-      <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      <span>Proventos</span>
-    </button>
     <button type="button" data-tab="social" onclick="showTab('social')">
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span>Social</span>
+    </button>
+    <button type="button" data-tab="study" onclick="showTab('study')">
+      <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      <span>Estudos</span>
     </button>
     <button type="button" data-tab="tools" onclick="showTab('tools')">
       <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1 5 5l-9.4 9.4a2.8 2.8 0 0 1-4-4z"/><path d="M15 9l-9 9"/></svg>
