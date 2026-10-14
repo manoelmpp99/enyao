@@ -9,8 +9,17 @@ function authScreen(id) {
 }
 
 function showApp() {
-  document.getElementById('authFlow')?.classList.add('hidden');
-  document.getElementById('appShell')?.classList.remove('hidden');
+  try {
+    const af = document.getElementById('authFlow');
+    const as = document.getElementById('appShell');
+    if (af) af.classList.add('hidden');
+    if (as) as.classList.remove('hidden');
+    return true;
+  } catch (e) {
+    console.error('[enyao] Erro no showApp:', e);
+    alert('Erro ao trocar de tela: ' + e.message);
+    return false;
+  }
 }
 
 function showAuthFlow() {
@@ -33,7 +42,9 @@ async function hashPassword(pwd) {
 }
 
 function newUserId() {
-  if (crypto.randomUUID) return crypto.randomUUID().replace(/-/g,'').slice(0, 16);
+  try {
+    if (crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,'').slice(0, 16);
+  } catch (e) {}
   return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
@@ -62,61 +73,89 @@ function loadAuth() {
 
 function showAuthError(elId, msg) {
   const el = $(elId);
-  if (!el) return;
+  if (!el) { alert(msg); return; }
   el.textContent = msg;
   el.classList.remove('hidden');
 }
 
 async function doSignup() {
-  const err = $('signupError');
-  err?.classList.add('hidden');
-  const name = ($('signupName')?.value || '').trim();
-  const email = ($('signupEmail')?.value || '').trim().toLowerCase();
-  const pwd = $('signupPassword')?.value || '';
-  const pwd2 = $('signupPassword2')?.value || '';
-  if (!name) return showAuthError('signupError', 'Informe seu nome.');
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('signupError', 'E-mail inválido.');
-  if (pwd.length < 6) return showAuthError('signupError', 'A senha precisa ter pelo menos 6 caracteres.');
-  if (pwd !== pwd2) return showAuthError('signupError', 'As senhas não batem.');
-  const users = loadUsers();
-  if (users[email]) return showAuthError('signupError', 'Esse e-mail já está cadastrado. Faça login.');
-  const btn = $('btnSignup');
-  if (btn) { btn.disabled = true; btn.textContent = 'Criando…'; }
-  const userId = newUserId();
-  users[email] = { userId, name, email, passwordHash: await hashPassword(pwd), createdAt: new Date().toISOString() };
-  saveUsers(users);
-  persistAuth({ userId, name, email });
   try {
-    const guestRaw = localStorage.getItem(BASE_KEY);
-    if (guestRaw && !localStorage.getItem(getKey())) {
-      localStorage.setItem(getKey(), guestRaw);
-    }
-  } catch (e) {}
-  if (btn) { btn.disabled = false; btn.textContent = 'Criar conta'; }
-  loadStateForCurrentUser();
-  bootAfterAuth();
+    const err = $('signupError');
+    if (err) err.classList.add('hidden');
+    const name = ($('signupName')?.value || '').trim();
+    const email = ($('signupEmail')?.value || '').trim().toLowerCase();
+    const pwd = $('signupPassword')?.value || '';
+    const pwd2 = $('signupPassword2')?.value || '';
+
+    if (!name) return showAuthError('signupError', 'Informe seu nome.');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('signupError', 'E-mail inválido.');
+    if (pwd.length < 6) return showAuthError('signupError', 'A senha precisa ter pelo menos 6 caracteres.');
+    if (pwd !== pwd2) return showAuthError('signupError', 'As senhas não batem.');
+
+    const users = loadUsers();
+    if (users[email]) return showAuthError('signupError', 'Esse e-mail já está cadastrado. Faça login.');
+
+    const btn = $('btnSignup');
+    if (btn) { btn.disabled = true; btn.textContent = 'Criando…'; }
+
+    const userId = newUserId();
+    const passwordHash = await hashPassword(pwd);
+    users[email] = { userId, name, email, passwordHash, createdAt: new Date().toISOString() };
+    saveUsers(users);
+    persistAuth({ userId, name, email });
+
+    try {
+      const guestRaw = localStorage.getItem(BASE_KEY);
+      if (guestRaw && !localStorage.getItem(getKey())) {
+        localStorage.setItem(getKey(), guestRaw);
+      }
+    } catch (e) {}
+
+    if (btn) { btn.disabled = false; btn.textContent = 'Criar conta'; }
+
+    loadStateForCurrentUser();
+    bootAfterAuth();
+  } catch (e) {
+    console.error('[enyao] Erro no signup:', e);
+    alert('Erro ao criar conta: ' + e.message);
+    const btn = $('btnSignup');
+    if (btn) { btn.disabled = false; btn.textContent = 'Criar conta'; }
+  }
 }
 
 async function doLogin() {
-  const err = $('loginError');
-  err?.classList.add('hidden');
-  const email = ($('loginEmail')?.value || '').trim().toLowerCase();
-  const pwd = $('loginPassword')?.value || '';
-  if (!email || !pwd) return showAuthError('loginError', 'Preencha e-mail e senha.');
-  const users = loadUsers();
-  const u = users[email];
-  if (!u) return showAuthError('loginError', 'E-mail não cadastrado neste aparelho.');
-  const h = await hashPassword(pwd);
-  if (h !== u.passwordHash) return showAuthError('loginError', 'Senha incorreta.');
-  persistAuth({ userId: u.userId, name: u.name, email: u.email });
-  loadStateForCurrentUser();
-  bootAfterAuth();
+  try {
+    const err = $('loginError');
+    if (err) err.classList.add('hidden');
+    const email = ($('loginEmail')?.value || '').trim().toLowerCase();
+    const pwd = $('loginPassword')?.value || '';
+    if (!email || !pwd) return showAuthError('loginError', 'Preencha e-mail e senha.');
+
+    const users = loadUsers();
+    const u = users[email];
+    if (!u) return showAuthError('loginError', 'E-mail não cadastrado neste aparelho.');
+
+    const h = await hashPassword(pwd);
+    if (h !== u.passwordHash) return showAuthError('loginError', 'Senha incorreta.');
+
+    persistAuth({ userId: u.userId, name: u.name, email: u.email });
+    loadStateForCurrentUser();
+    bootAfterAuth();
+  } catch (e) {
+    console.error('[enyao] Erro no login:', e);
+    alert('Erro ao entrar: ' + e.message);
+  }
 }
 
 function enterAsGuest() {
-  clearAuth();
-  loadStateForCurrentUser();
-  bootAfterAuth();
+  try {
+    clearAuth();
+    loadStateForCurrentUser();
+    bootAfterAuth();
+  } catch (e) {
+    console.error('[enyao] Erro ao entrar como convidado:', e);
+    alert('Erro: ' + e.message);
+  }
 }
 
 window.logoutConfirm = function() {
@@ -125,8 +164,25 @@ window.logoutConfirm = function() {
   showAuthFlow();
 };
 
+function bootAfterAuth() {
+  if (!showApp()) return;
+
+  try { renderAccount(); } catch (e) { console.error('[enyao] renderAccount:', e); }
+  try { runRFProjection(false); } catch (e) { console.error('[enyao] runRFProjection:', e); }
+  try { recordSnapshot(); } catch (e) { console.error('[enyao] recordSnapshot:', e); }
+  try {
+    render();
+  } catch (e) {
+    console.error('[enyao] render:', e);
+    alert('Erro ao carregar o app: ' + e.message + '\n\nVerifique o console (DevTools) pra mais detalhes.');
+  }
+  try { setupAutoRefresh(); } catch (e) { console.error('[enyao] setupAutoRefresh:', e); }
+}
+
 window.authScreen = authScreen;
 window.enterAsGuest = enterAsGuest;
+window.doSignup = doSignup;
+window.doLogin = doLogin;
 
 /* ============================================================
    RENDER CONTA / PERFIL / PROFESSOR
