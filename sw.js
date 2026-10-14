@@ -1,4 +1,4 @@
-const CACHE = 'enyao-v26';
+const CACHE = 'enyao-v27';
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./manifest.json','./icon.svg'];
 
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {})); });
