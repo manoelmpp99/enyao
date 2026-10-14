@@ -17,6 +17,7 @@ const DEFAULT_API_KEY = 'n2jSRHKNBe1nYrLza56x6n';
 const BASE_KEY = 'enyao-v02';
 const AUTH_KEY = 'enyao-auth-v01';
 const USERS_KEY = 'enyao-users-v01';
+const CLASSES_KEY = 'enyao-classes-v01';
 const SALDO_TICKER = '__SALDO__';
 
 let authUser = null;
@@ -91,7 +92,7 @@ const DEFAULT_STATE = () => ({
   cdiRate: 13.65, rfLastProjection: null, history: [], priceHistory: {},
   goals: [], b3Catalog: [], b3CatalogSyncedAt: null,
   social: { posts: [], following: [], publicProfile: true, bio: '', nickname: '' },
-  study: { role: 'student', enrolledClassCode: null, lastStudyTab: 'student' }
+  study: { role: 'student', enrolledClassCode: null }
 });
 
 let state = DEFAULT_STATE();
@@ -119,10 +120,13 @@ function loadStateForCurrentUser() {
       if (s.social && typeof s.social === 'object') {
         if (Array.isArray(s.social.posts)) state.social.posts = s.social.posts;
         if (Array.isArray(s.social.following)) state.social.following = s.social.following;
-        if (Array.isArray(s.social.classes)) state.social.classes = s.social.classes;
         if (typeof s.social.publicProfile === 'boolean') state.social.publicProfile = s.social.publicProfile;
         if (typeof s.social.bio === 'string') state.social.bio = s.social.bio;
         if (typeof s.social.nickname === 'string') state.social.nickname = s.social.nickname;
+      }
+      if (s.study && typeof s.study === 'object') {
+        if (typeof s.study.role === 'string') state.study.role = s.study.role;
+        if (typeof s.study.enrolledClassCode === 'string') state.study.enrolledClassCode = s.study.enrolledClassCode;
       }
     }
   } catch (e) { console.warn('Erro lendo estado', e); }
@@ -905,8 +909,22 @@ function clearB3Catalog() {
   if (status) { status.textContent = 'Catálogo B3 limpo'; status.className = 'cdi-status'; }
 }
 
-/* ---------- PDF empty stubs (evita erro antes do app-2 carregar) ---------- */
-window.showTab = window.showTab || function(){};
-window.render = window.render || function(){};
-
-/* ---- FIM DO app-1.js ---- */
+/* ============================================================
+   CLASSES GLOBAIS (banco de turmas)
+   ============================================================ */
+function loadGlobalClasses() {
+  try { return JSON.parse(localStorage.getItem(CLASSES_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+function saveGlobalClasses(c) {
+  try { localStorage.setItem(CLASSES_KEY, JSON.stringify(c)); } catch (e) {}
+}
+function genStudyCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < 6; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+  return out;
+}
+function isCodeExpired(classObj) {
+  if (!classObj || !classObj.expiresAt) return false;
+  return Date.now() > new Date(classObj.expiresAt).getTime();
+}
