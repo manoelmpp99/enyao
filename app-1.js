@@ -4,7 +4,7 @@
     var b=document.getElementById('__err');
     if(!b){
       b=document.createElement('div');b.id='__err';
-      b.style.cssText='position:fixed;top:0;left:0;right:0;background:#ff4d80;color:#fff;padding:12px;font:12px/1.4 monospace;z-index:99999;white-space:pre-wrap;max-height:45vh;overflow:auto';
+      b.style.cssText='position:fixed;top:0;left:0;right:0;background:#ff4d80;color:#fff;padding:12px;font:12px/1.4 monospace;z-index:9999999;white-space:pre-wrap;max-height:45vh;overflow:auto';
       document.body.appendChild(b);
     }
     b.textContent+=(b.textContent?'\n':'')+msg;
