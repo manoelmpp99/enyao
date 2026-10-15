@@ -1070,26 +1070,44 @@ async function fetchPrice(ticker) {
    START
    ============================================================ */
 try {
-  const isTeacherLink = new URLSearchParams(location.search).has('professor');
-  if (isTeacherLink) {
-    const t = $('welcomeTagline');
-    if (t) t.textContent = 'Painel do professor: crie turmas, gere códigos e envie materiais.';
-    const st = $('signupTitle');
-    if (st) st.textContent = 'Criar conta de professor';
-    const ss = $('signupSubtitle');
-    if (ss) ss.textContent = 'Você terá acesso ao painel de turmas.';
-    const tf = $('teacherField');
-    if (tf) tf.classList.remove('hidden');
-  }
+  const isTeacherLink = new URLSearchParams(location.search).has('professor') || location.hash === '#professor';
 
   authUser = loadAuth();
   if (authUser && authUser.userId) {
     const users = loadUsers();
     const u = users[authUser.email];
     loadStateForCurrentUser();
-    if (u && u.isTeacher) state.study.role = 'teacher';
+
+    if (u && u.isTeacher) {
+      state.study.role = 'teacher';
+    } else if (isTeacherLink) {
+      const quer = confirm(
+        '🔓 Link de professor detectado.\n\n' +
+        'Deseja ativar o modo professor nesta conta?\n\n' +
+        '(Você terá acesso ao painel de turmas, geração de códigos e envio de materiais.)'
+      );
+      if (quer) {
+        if (u) {
+          u.isTeacher = true;
+          saveUsers(users);
+        }
+        state.study.role = 'teacher';
+        save();
+        alert('✅ Pronto! Modo professor ativado.');
+      }
+    }
     bootAfterAuth();
   } else {
+    if (isTeacherLink) {
+      const t = $('welcomeTagline');
+      if (t) t.textContent = 'Painel do professor: crie turmas, gere códigos e envie materiais.';
+      const st = $('signupTitle');
+      if (st) st.textContent = 'Criar conta de professor';
+      const ss = $('signupSubtitle');
+      if (ss) ss.textContent = 'Você terá acesso ao painel de turmas.';
+      const tf = $('teacherField');
+      if (tf) tf.classList.remove('hidden');
+    }
     document.getElementById('authFlow')?.classList.remove('hidden');
     document.getElementById('appShell')?.classList.add('hidden');
     setTimeout(() => authScreen('welcome'), 1200);
