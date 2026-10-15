@@ -30,6 +30,7 @@
       <button type="button" class="auth-cta-ghost" onclick="authScreen('login')">Já tenho conta</button>
       <button type="button" class="auth-guest" onclick="enterAsGuest()">Continuar sem conta</button>
       <div class="auth-legal">Seus dados ficam salvos neste aparelho. Você pode criar conta depois.</div>
+      <button type="button" class="auth-link" style="margin-top:6px;font-size:11.5px" onclick="openTeacherCode()">Sou professor (inserir código)</button>
     </div>
   </div>
   <div id="screenLogin" class="auth-screen hidden">
@@ -98,7 +99,6 @@
     </div>
   </header>
   <main>
-    <!-- ========== CARTEIRA ========== -->
     <section class="section" id="portfolio">
       <h2>Minha carteira</h2>
       <p class="notice" style="margin-top:0;margin-bottom:12px">Carteira declarada — você registra suas operações e o enyao organiza a análise.</p>
@@ -108,10 +108,8 @@
       <div id="assets"></div>
     </section>
 
-    <!-- ========== OPERAR ========== -->
     <section class="section hidden" id="trade">
       <h2>Operar</h2>
-
       <div class="tools-tabs" style="margin-bottom:16px">
         <button type="button" class="tools-tab active" data-op="buy">💸 Compra / Venda</button>
         <button type="button" class="tools-tab" data-op="div">💰 Proventos</button>
@@ -119,7 +117,6 @@
         <button type="button" class="tools-tab" data-op="hist">📜 Histórico</button>
       </div>
 
-      <!-- COMPRA/VENDA -->
       <div class="op-panel" id="opBuy">
         <div class="saldo-card">
           <div class="saldo-card-inner">
@@ -165,7 +162,6 @@
         </form>
       </div>
 
-      <!-- PROVENTOS -->
       <div class="op-panel hidden" id="opDiv">
         <h2 style="margin-top:0">Registrar provento</h2>
         <button type="button" class="primary-div" id="toggleDivForm">+ Novo provento</button>
@@ -192,7 +188,6 @@
         <div id="divHistory"></div>
       </div>
 
-      <!-- NOTA -->
       <div class="op-panel hidden" id="opNota">
         <h2 style="margin-top:0">Importar nota de corretagem</h2>
         <p class="notice">Aceita PDF ou texto de <b>Itaú, XP, Rico, Clear, BTG, Órama, Genial, Guide, Inter, Ion, Nu</b>.</p>
@@ -208,14 +203,12 @@
         <div id="notaPreview" class="hidden" style="margin-top:12px"></div>
       </div>
 
-      <!-- HIST -->
       <div class="op-panel hidden" id="opHist">
         <h2 style="margin-top:0">Histórico de operações</h2>
         <div id="tradeHistory"></div>
       </div>
     </section>
 
-    <!-- ========== SOCIAL ========== -->
     <section class="section hidden" id="social">
       <h2>Social</h2>
       <div class="tools-tabs">
@@ -246,11 +239,9 @@
       </div>
     </section>
 
-    <!-- ========== ESTUDOS ========== -->
     <section class="section hidden" id="study">
       <h2 id="studyTitle">Estudos</h2>
 
-      <!-- VISÃO DO ALUNO -->
       <div id="studyStudent">
         <div id="studentNoClass">
           <div class="study-hero">
@@ -266,7 +257,6 @@
         <div id="studentHasClass" class="hidden"></div>
       </div>
 
-      <!-- VISÃO DO PROFESSOR -->
       <div id="studyTeacher" class="hidden">
         <div class="teacher-hero">
           <div class="teacher-hero-badge">PROFESSOR</div>
@@ -279,7 +269,6 @@
       </div>
     </section>
 
-    <!-- ========== FERRAMENTAS ========== -->
     <section class="section hidden" id="tools">
       <h2>Ferramentas</h2>
       <div class="tools-tabs">
@@ -342,7 +331,6 @@
       </div>
     </section>
 
-    <!-- ========== PERFIL ========== -->
     <section class="section hidden" id="backup">
       <h2>Perfil</h2>
 
@@ -476,6 +464,19 @@
     <div class="modal-actions">
       <button type="button" id="classCancel" class="ghost">Cancelar</button>
       <button type="button" id="classConfirm" class="primary">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="teacherCodeModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-title">Código de Professor</div>
+    <div class="sell-info">Insira o código de acesso que você recebeu ao adquirir a licença de professor.</div>
+    <input id="teacherCodeInput" placeholder="Ex.: PROFESSOR2026" style="text-transform:uppercase;text-align:center;font-weight:800;letter-spacing:2px">
+    <div id="teacherCodeError" class="auth-error hidden" style="margin-top:12px"></div>
+    <div class="modal-actions">
+      <button type="button" class="ghost" onclick="closeTeacherCode()">Cancelar</button>
+      <button type="button" class="primary" onclick="confirmTeacherCode()">Ativar</button>
     </div>
   </div>
 </div>
