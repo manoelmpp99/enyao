@@ -94,7 +94,9 @@ async function doSignup() {
     if (btn) { btn.disabled = true; btn.textContent = 'Criando…'; }
     const userId = newUserId();
     const passwordHash = await hashPassword(pwd);
-    const isTeacher = new URLSearchParams(location.search).has('professor');
+    const isTeacher = (typeof window.__teacherSignup !== 'undefined' && window.__teacherSignup === true)
+      || new URLSearchParams(location.search).has('professor')
+      || location.hash === '#professor';
     users[email] = { userId, name, email, passwordHash, isTeacher, createdAt: new Date().toISOString() };
     saveUsers(users);
     persistAuth({ userId, name, email });
@@ -105,6 +107,7 @@ async function doSignup() {
     if (btn) { btn.disabled = false; btn.textContent = 'Criar conta'; }
     loadStateForCurrentUser();
     if (isTeacher) state.study.role = 'teacher';
+    window.__teacherSignup = false;
     bootAfterAuth();
   } catch (e) {
     console.error('[enyao] Erro no signup:', e);
@@ -178,7 +181,11 @@ function renderAccount() {
     const color = avatarColor(authUser.email || authUser.name);
     const users = loadUsers();
     const u = users[authUser.email];
-    const tag = u?.isTeacher ? 'Professor' : 'Conta ativa';
+    const isTeacher = u?.isTeacher || state.study.role === 'teacher';
+    const tag = isTeacher ? 'Professor' : 'Conta ativa';
+    const upgradeBtn = !isTeacher
+      ? `<button class="ghost" style="width:100%;margin-top:10px" onclick="openTeacherCode()">🔓 Ativar modo professor</button>`
+      : '';
     box.innerHTML = `
       <div class="account-card">
         <div class="account-avatar" style="background:${color}">${esc(initial)}</div>
@@ -189,6 +196,7 @@ function renderAccount() {
         </div>
       </div>
       <button class="ghost" style="width:100%;margin-top:12px" onclick="logoutConfirm()">Sair da conta</button>
+      ${upgradeBtn}
     `;
   } else {
     box.innerHTML = `
@@ -756,3 +764,73 @@ function drawStatCard(ctx, x, y, w, h, label, value, accent) {
   ctx.fillStyle = '#ffffff';
   ctx.fillText(value, x + 20, y + 110);
 }
+
+/* ============================================================
+   CÓDIGO DE PROFESSOR
+   ============================================================ */
+const TEACHER_ACCESS_CODE = 'PROFESSOR2026';
+
+window.openTeacherCode = function() {
+  const err = $('teacherCodeError');
+  if (err) err.classList.add('hidden');
+  const input = $('teacherCodeInput');
+  if (input) input.value = '';
+  $('teacherCodeModal')?.classList.remove('hidden');
+  setTimeout(() => input?.focus(), 100);
+};
+
+window.closeTeacherCode = function() {
+  $('teacherCodeModal')?.classList.add('hidden');
+};
+
+window.confirmTeacherCode = function() {
+  const err = $('teacherCodeError');
+  const input = $('teacherCodeInput');
+  const code = (input?.value || '').trim().toUpperCase();
+  if (!code) {
+    if (err) { err.textContent = 'Insira um código.'; err.classList.remove('hidden'); }
+    return;
+  }
+  if (code !== TEACHER_ACCESS_CODE) {
+    if (err) { err.textContent = 'Código inválido. Confira o que você recebeu.'; err.classList.remove('hidden'); }
+    return;
+  }
+  window.__teacherSignup = true;
+  closeTeacherCode();
+
+  if (authUser && authUser.userId) {
+    const users = loadUsers();
+    const u = users[authUser.email];
+    if (u) {
+      u.isTeacher = true;
+      saveUsers(users);
+    }
+    state.study.role = 'teacher';
+    save();
+    alert('✅ Modo professor ativado nesta conta!');
+    render();
+    window.showTab('study');
+  } else {
+    authScreen('signup');
+    const st = $('signupTitle');
+    if (st) st.textContent = 'Criar conta de professor';
+    const ss = $('signupSubtitle');
+    if (ss) ss.textContent = 'Você terá acesso ao painel de turmas.';
+    const tf = $('teacherField');
+    if (tf) tf.classList.remove('hidden');
+  }
+};
+
+window.activateTeacherOnCurrentAccount = function() {
+  if (!authUser || !authUser.userId) return;
+  const users = loadUsers();
+  const u = users[authUser.email];
+  if (!u) return;
+  u.isTeacher = true;
+  saveUsers(users);
+  state.study.role = 'teacher';
+  save();
+  alert('✅ Modo professor ativado nesta conta!');
+  render();
+  window.showTab('study');
+};
