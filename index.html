@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="drawer.css">
 </head>
 <body>
 
@@ -74,32 +75,78 @@
 </div>
 
 <div id="appShell" class="app-shell hidden">
-  <header>
-    <div class="brand">enyao</div>
-    <div id="heroSection">
-      <div class="hero">
-        <div class="hero-label">Patrimônio total</div>
-        <div class="hero-total-row">
-          <div class="hero-total" id="total">R$ 0,00</div>
-          <div class="hero-badge" id="totalPct">0,0%</div>
-        </div>
-        <div class="hero-updated" id="updatedAt"></div>
-        <div class="hero-stats">
-          <div class="hero-stat"><div class="hero-stat-label">Posições</div><div class="hero-stat-value" id="count">0</div></div>
-          <div class="hero-stat"><div class="hero-stat-label">Resultado</div><div class="hero-stat-value" id="profit">R$ 0,00</div></div>
-        </div>
+  <header class="topbar">
+    <button type="button" class="topbar-menu" onclick="toggleDrawer()" aria-label="Menu">☰</button>
+    <div class="topbar-brand">enyao</div>
+    <button type="button" class="topbar-user" id="topbarUser" onclick="showTab('backup')" aria-label="Perfil">?</button>
+  </header>
+
+  <nav class="drawer" id="drawer">
+    <div class="drawer-inner">
+      <button type="button" class="drawer-close" onclick="closeDrawer()" aria-label="Fechar">✕</button>
+      <div class="drawer-brand">enyao</div>
+      <div class="drawer-items tabs">
+        <button type="button" data-tab="portfolio" onclick="showTab('portfolio')">
+          <svg viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7"/></svg>
+          <span>Carteira</span>
+        </button>
+        <button type="button" data-tab="trade" onclick="showTab('trade')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+          <span>Operar</span>
+        </button>
+        <button type="button" data-tab="tools" onclick="showTab('tools')">
+          <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1 5 5l-9.4 9.4a2.8 2.8 0 0 1-4-4z"/><path d="M15 9l-9 9"/></svg>
+          <span>Ferramentas</span>
+        </button>
+        <button type="button" data-tab="study" onclick="showTab('study')">
+          <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span>Estudos</span>
+        </button>
+        <button type="button" data-tab="social" onclick="showTab('social')">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Social</span>
+        </button>
+        <button type="button" data-tab="backup" onclick="showTab('backup')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+          <span>Perfil</span>
+        </button>
       </div>
-      <div class="div-hero">
-        <div class="div-hero-label">Proventos recebidos</div>
-        <div class="div-hero-stats">
-          <div class="div-stat"><div class="div-stat-label">Este mês</div><div class="div-stat-value" id="divMonth">R$ 0,00</div></div>
-          <div class="div-stat"><div class="div-stat-label">Este ano</div><div class="div-stat-value" id="divYear">R$ 0,00</div></div>
-        </div>
+      <div class="drawer-footer">
+        <button type="button" onclick="showTab('backup')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:none;background:transparent;color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit">
+          <span style="font-size:16px">⚙️</span> Configurações
+        </button>
+        <button type="button" onclick="logoutConfirm()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:none;background:transparent;color:rgba(255,100,140,.85);font-size:13px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit">
+          <span style="font-size:16px">🚪</span> Sair da conta
+        </button>
+        <div class="drawer-version">enyao · v1.0</div>
       </div>
     </div>
-  </header>
+  </nav>
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+
   <main>
     <section class="section" id="portfolio">
+      <div id="heroSection">
+        <div class="hero">
+          <div class="hero-label">Patrimônio total</div>
+          <div class="hero-total-row">
+            <div class="hero-total" id="total">R$ 0,00</div>
+            <div class="hero-badge" id="totalPct">0,0%</div>
+          </div>
+          <div class="hero-updated" id="updatedAt"></div>
+          <div class="hero-stats">
+            <div class="hero-stat"><div class="hero-stat-label">Posições</div><div class="hero-stat-value" id="count">0</div></div>
+            <div class="hero-stat"><div class="hero-stat-label">Resultado</div><div class="hero-stat-value" id="profit">R$ 0,00</div></div>
+          </div>
+        </div>
+        <div class="div-hero">
+          <div class="div-hero-label">Proventos recebidos</div>
+          <div class="div-hero-stats">
+            <div class="div-stat"><div class="div-stat-label">Este mês</div><div class="div-stat-value" id="divMonth">R$ 0,00</div></div>
+            <div class="div-stat"><div class="div-stat-label">Este ano</div><div class="div-stat-value" id="divYear">R$ 0,00</div></div>
+          </div>
+        </div>
+      </div>
       <h2>Minha carteira</h2>
       <p class="notice" style="margin-top:0;margin-bottom:12px">Carteira declarada — você registra suas operações e o enyao organiza a análise.</p>
       <button type="button" class="ghost" id="refreshBtn" style="width:100%;margin-bottom:12px">🔄 Atualizar cotações agora</button>
@@ -397,32 +444,6 @@
       <button id="clearBtn" class="danger" style="margin-top:18px">Apagar todos os dados</button>
     </section>
   </main>
-  <nav class="tabs tabs-6"><div class="tabs-inner">
-    <button type="button" class="active" data-tab="portfolio" onclick="showTab('portfolio')">
-      <svg viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7"/></svg>
-      <span>Carteira</span>
-    </button>
-    <button type="button" data-tab="trade" onclick="showTab('trade')">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
-      <span>Operar</span>
-    </button>
-    <button type="button" data-tab="social" onclick="showTab('social')">
-      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span>Social</span>
-    </button>
-    <button type="button" data-tab="study" onclick="showTab('study')">
-      <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-      <span>Estudos</span>
-    </button>
-    <button type="button" data-tab="tools" onclick="showTab('tools')">
-      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1 5 5l-9.4 9.4a2.8 2.8 0 0 1-4-4z"/><path d="M15 9l-9 9"/></svg>
-      <span>Ferramentas</span>
-    </button>
-    <button type="button" data-tab="backup" onclick="showTab('backup')">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
-      <span>Perfil</span>
-    </button>
-  </div></nav>
 </div>
 
 <div id="modalOverlay" class="modal-overlay hidden">
@@ -585,5 +606,6 @@ setTimeout(function(){
 <script src="app-2.js"></script>
 <script src="app-3.js"></script>
 <script src="app-4.js"></script>
+<script src="app-5.js"></script>
 </body>
 </html>
