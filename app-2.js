@@ -520,7 +520,8 @@ function renderTools() {
   document.querySelectorAll('.tools-tab[data-tool]').forEach(b => {
     b.classList.toggle('active', b.dataset.tool === currentTool);
   });
-  ['perf','sim','goals','report','ir'].forEach(t => {
+  // ⚠️ CORREÇÃO: 'calc' adicionado na lista abaixo
+  ['perf','sim','calc','goals','report','ir'].forEach(t => {
     const el = $('tool' + t.charAt(0).toUpperCase() + t.slice(1));
     if (el) el.classList.toggle('hidden', t !== currentTool);
   });
