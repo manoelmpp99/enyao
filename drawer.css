@@ -125,44 +125,62 @@
   margin-bottom: 12px;
 }
 
-/* Itens de navegação */
-.drawer-items {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+/* ============================================================
+   ITENS DO DRAWER — força ícone + texto na MESMA LINHA
+   (sobrescreve as regras de .tabs do styles.css)
+   ============================================================ */
+.drawer-items,
+.drawer-items.tabs {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
   flex: 1;
   position: relative;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
 }
-.drawer-items button {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
+
+.drawer-items button,
+.drawer-items.tabs button {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 12px !important;
+  padding: 11px 14px !important;
   background: transparent;
-  border: none;
-  border-radius: 12px;
+  border: none !important;
+  border-radius: 12px !important;
   color: rgba(255,255,255,.68);
   font-size: 14px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.2;
   cursor: pointer;
   text-align: left;
   transition: background .15s, color .15s;
   font-family: inherit;
   min-height: 44px;
   width: 100%;
+  position: relative;
 }
-.drawer-items button:hover {
+.drawer-items button:hover,
+.drawer-items.tabs button:hover {
   background: rgba(255,255,255,.05);
   color: #fff;
 }
-.drawer-items button.active {
-  background: linear-gradient(135deg, rgba(236,72,153,.18), rgba(168,85,247,.18));
-  color: #fff;
+.drawer-items button.active,
+.drawer-items.tabs button.active {
+  background: linear-gradient(135deg, rgba(236,72,153,.18), rgba(168,85,247,.18)) !important;
+  color: #fff !important;
+  padding-left: 20px !important;
 }
-/* Indicador lateral do ativo — position absolute, não empurra nada */
-.drawer-items button.active::before {
+/* Indicador lateral do ativo */
+.drawer-items button.active::before,
+.drawer-items.tabs button.active::before {
   content: '';
   position: absolute;
   left: 4px;
@@ -173,24 +191,32 @@
   border-radius: 2px;
   background: linear-gradient(180deg, #ec4899, #a855f7);
 }
-.drawer-items button.active {
-  padding-left: 20px;
-}
-/* Ícone padronizado e alinhado */
-.drawer-items button svg {
-  width: 18px;
-  height: 18px;
+/* Ícone — tamanho fixo, não encolhe, não estica */
+.drawer-items button svg,
+.drawer-items.tabs button svg {
+  width: 18px !important;
+  height: 18px !important;
   stroke: currentColor;
   fill: none;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
   flex-shrink: 0;
-  display: block;
+  flex-grow: 0;
+  display: block !important;
+  margin: 0 !important;
 }
-.drawer-items button > span {
-  display: block;
+/* Texto — ocupa o resto, alinhado à esquerda, na mesma linha */
+.drawer-items button > span,
+.drawer-items.tabs button > span {
+  display: inline-block !important;
+  flex: 1;
+  min-width: 0;
   line-height: 1.2;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Rodapé do drawer */
