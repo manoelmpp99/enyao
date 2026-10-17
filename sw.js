@@ -1,5 +1,5 @@
-const CACHE='enyao-v35';
-const ASSETS=['./','./index.html','./styles.css','./app-1.js','./app-2.js','./app-3.js','./app-4.js','./manifest.json','./icon.svg'];
+const CACHE='enyao-v36';
+const ASSETS=['./','./index.html','./styles.css','./drawer.css','./app-1.js','./app-2.js','./app-3.js','./app-4.js','./app-5.js','./manifest.json','./icon.svg'];
 
 self.addEventListener('install',e=>{
   self.skipWaiting();
